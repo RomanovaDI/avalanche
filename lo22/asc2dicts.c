@@ -2,6 +2,8 @@
 #include<stdlib.h>
 #include<string.h>
 
+/*asc2dicts [map.asc] [divided times] [depth of snow]*/
+
 int main(int argc, char **argv)
 {
 	if (argc > 4) {
