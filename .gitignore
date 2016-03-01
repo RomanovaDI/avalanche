@@ -2,3 +2,5 @@
 [1-9]*
 *.txt
 *.asc
+pics*
+asc2dicts
