@@ -1,20 +1,21 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<math.h>
 
-/*asc2dicts [map.asc] [divided times] [depth of snow]*/
+/*asc2dicts [map ascii] [divided times] [depth of snow] [region map ascii]*/
 
 int main(int argc, char **argv)
 {
-	if (argc > 4) {
+	if (argc > 5) {
 		printf("Error arguments\n");
-		return 1;
+		goto exit_without_massives;
 	}
 
 	FILE *f = fopen(argv[1],"r");
 	if (f == NULL) {
 		printf("No such file\n");
-		return 1;
+		goto exit_without_massives;
 	}
 
 	FILE *f1 = fopen("map.txt", "w");
@@ -26,7 +27,22 @@ int main(int argc, char **argv)
 	fclose(f1);
 	fclose(f);
 
+	f = fopen(argv[4],"r");
+	if (f == NULL) {
+		printf("No such file\n");
+		goto exit_without_massives;
+	}
+
+	f1 = fopen("regions_map.txt", "w");
+	while ((i = getc(f)) != EOF) {
+		if (i == ',') i = '.';
+		putc(i, f1);
+	}
+	fclose(f1);
+	fclose(f);
+
 	f = fopen("map.txt", "r");
+	f1 = fopen("regions_map.txt", "r");
 
 	int err;
 	char str[20];
@@ -39,11 +55,12 @@ int main(int argc, char **argv)
 	if ((err = fscanf(f, "%s %d", str, &nrows)) == EOF) goto err_file;
 	if (strcmp(str, "nrows") != 0) goto err_file;
 
-	float unused;
-	if ((err = fscanf(f, "%s %f", str, &unused)) == EOF) goto err_file;
+	float xllcorner;
+	if ((err = fscanf(f, "%s %f", str, &xllcorner)) == EOF) goto err_file;
 	if (strcmp(str, "xllcorner") != 0) goto err_file;
 	
-	if ((err = fscanf(f, "%s %f", str, &unused)) == EOF) goto err_file;
+	float yllcorner;
+	if ((err = fscanf(f, "%s %f", str, &yllcorner)) == EOF) goto err_file;
 	if (strcmp(str, "yllcorner") != 0) goto err_file;
 	
 	float cellsize;
@@ -54,8 +71,53 @@ int main(int argc, char **argv)
 	if ((err = fscanf(f, "%s %f", str, &nodata_value)) == EOF) goto err_file;
 	if (strcmp(str, "NODATA_value") != 0) goto err_file;
 
+	int ncols1;
+	if ((err = fscanf(f1, "%s %d", str, &ncols1)) == EOF) goto err_file;
+	if (strcmp(str, "ncols") != 0) goto err_file;
+
+	int nrows1;
+	if ((err = fscanf(f1, "%s %d", str, &nrows1)) == EOF) goto err_file;
+	if (strcmp(str, "nrows") != 0) goto err_file;
+
+	float xllcorner1;
+	if ((err = fscanf(f1, "%s %f", str, &xllcorner1)) == EOF) goto err_file;
+	if (strcmp(str, "xllcorner") != 0) goto err_file;
+	
+	float yllcorner1;
+	if ((err = fscanf(f1, "%s %f", str, &yllcorner1)) == EOF) goto err_file;
+	if (strcmp(str, "yllcorner") != 0) goto err_file;
+	
+	float cellsize1;
+	if ((err = fscanf(f1, "%s %f", str, &cellsize1)) == EOF) goto err_file;
+	if (strcmp(str, "cellsize") != 0) goto err_file;
+
+	float nodata_value1;
+	if ((err = fscanf(f1, "%s %f", str, &nodata_value1)) == EOF) goto err_file;
+	if (strcmp(str, "NODATA_value") != 0) goto err_file;
+
+	if (cellsize != cellsize1) {
+		printf("Cellsize in both maps need to be the same\n");
+		goto err_file;
+	}
+
+	if ((cellsize - (int) cellsize != 0) || (cellsize1 - (int) cellsize1 != 0)) {
+		printf("In this vercion the value cellsize need to be integer\n");
+		goto err_file;
+	}
+
+	if ((((int) fabs(xllcorner - xllcorner1)) % (int) cellsize) || ((int) fabs(yllcorner - yllcorner1) % (int) cellsize) ||
+		(fabs(xllcorner - xllcorner1) - (int) fabs(xllcorner - xllcorner1) != 0) || (fabs(yllcorner - yllcorner1) - (int) fabs(yllcorner - yllcorner1) != 0)) {
+		printf("Difference between xllcorners of maps and yllcorners need to aligned to cellsize\n");
+		goto err_file;
+	}
+
 	float *mass;
 	if ((mass = (float *) malloc(ncols * nrows * sizeof(float))) == NULL) {
+		printf("Memory error\n");
+		goto exit;
+	}
+	float *mass1;
+	if ((mass1 = (float *) malloc(ncols1 * nrows1 * sizeof(float))) == NULL) {
 		printf("Memory error\n");
 		goto exit;
 	}
@@ -78,8 +140,13 @@ int main(int argc, char **argv)
 		if (i < (ncols - 1) * (nrows - 1))
 			bl_cond[i] = -1;
 	}
+	for (i = 0; i < ncols1 * nrows1; i++) {
+		if (err = fscanf(f1, "%f", &mass1[i]) == EOF)
+			goto err_file;
+	}
 
 	fclose(f);
+	fclose(f1);
 
 	FILE *f_vertices = fopen("vertices.txt", "w");
 	fprintf(f_vertices, "vertices\n(\n");
@@ -357,25 +424,69 @@ int main(int argc, char **argv)
 		}
 	}
 
+	int *snow_region = (int *) malloc(ncols * nrows * sizeof(int));
+	float xlucorner = xllcorner;
+	float ylucorner = yllcorner + cellsize * nrows;
+	float xlucorner1 = xllcorner1;
+	float ylucorner1 = yllcorner1 + cellsize1 * nrows1;
+	for (i = 0; i < nrows; i++) {
+		for (j = 0; j < ncols; j++) {
+			if ((xlucorner1 - xlucorner >= 0) && (ylucorner -ylucorner1 >= 0) &&
+				(j >= ((int) (xlucorner1 - xlucorner)) / cellsize) && (i >= ((int) (ylucorner - ylucorner1)) / cellsize) &&
+				(j < ((int) (xlucorner1 - xlucorner)) / cellsize + ncols1) && (i < ((int) (ylucorner - ylucorner1)) / cellsize + nrows1)) {
+					if (mass1[(i - ((int) (ylucorner - ylucorner1)) / (int) cellsize) * ncols1 + j - ((int) (xlucorner1 - xlucorner)) / (int) cellsize] == 1)
+						snow_region[i * ncols + j] = 1;
+					else if (mass1[(i - ((int) (ylucorner - ylucorner1)) / (int) cellsize) * ncols1 + j - ((int) (xlucorner1 - xlucorner)) / (int) cellsize] == 0)
+						snow_region[i * ncols + j] = 0;
+					else
+						snow_region[i * ncols + j] = -1;
+			} else {
+					snow_region[i * ncols + j] = -1;
+			}
+		}
+	}
+
+//	printf("%d\n", nrows);
+//	f = fopen("mass1.txt", "w");
+//	for (i = 0; i < nrows; i++) {
+//		for (j = 0; j < ncols; j++) {
+//			fprintf(f, "%d\t", snow_region[i * ncols + j]);
+//		}
+//		fprintf(f, "\n");
+//	}
+//	fclose(f);
+
 	f = fopen("setFieldsDict", "w");
 	fprintf(f, "FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tlocation\t\"system\";\n\tobject\tsetFieldsDict;\n}\n");
 	fprintf(f, "defaultFieldValues\n(\n\tvolScalarFieldValue\talpha.water\t0\n);\n");
+	fprintf(f, "defaultFieldValues\n(\n\tvolScalarFieldValue\tregion\t0\n);\n");
 	fprintf(f, "regions\n(\n");
 	for (i = 0; i < nrows - 1; i++) {
 		for (j = 0; j < ncols - 1; j++) {
-			if (bl_cond[i * (ncols - 1) + j] !=  -1) {
+			if ((bl_cond[i * (ncols - 1) + j] !=  -1) && (snow_region[i * ncols + j] == 0)) {
 				fprintf(f, "rotatedBoxToCell\n{\n");
 				fprintf(f, "\torigin\t(%f\t%f\t%f\t);\n", cellsize * i, cellsize * j, mass[i * ncols + j]);
 				fprintf(f, "\ti\t\t(%f\t%f\t%f\t);\n", cellsize, 0., mass[(i + 1) * ncols + j] - mass[i * ncols + j]);
 				fprintf(f, "\tj\t\t(%f\t%f\t%f\t);\n", 0., cellsize, mass[i * ncols + j + 1] - mass[i * ncols + j]);
-				fprintf(f, "\tk\t\t(%f\t%f\t%f\t);\n", 0., 0., snow_depth[i * ncols + j]);
+				//fprintf(f, "\tk\t\t(%f\t%f\t%f\t);\n", 0., 0., snow_depth[i * ncols + j]);
+				fprintf(f, "\tk\t\t(%f\t%f\t%f\t);\n", 0., 0., atof(argv[3]));
 				fprintf(f, "\tfieldValues\n\t(\n\t\tvolScalarFieldValue\talpha.water\t1\n\t);\n}\n");
+			}
+			if ((bl_cond[i * (ncols - 1) + j] !=  -1) && (snow_region[i * ncols + j] == 1)) {
+				fprintf(f, "rotatedBoxToCell\n{\n");
+				fprintf(f, "\torigin\t(%f\t%f\t%f\t);\n", cellsize * i, cellsize * j, mass[i * ncols + j]);
+				fprintf(f, "\ti\t\t(%f\t%f\t%f\t);\n", cellsize, 0., mass[(i + 1) * ncols + j] - mass[i * ncols + j]);
+				fprintf(f, "\tj\t\t(%f\t%f\t%f\t);\n", 0., cellsize, mass[i * ncols + j + 1] - mass[i * ncols + j]);
+				fprintf(f, "\tk\t\t(%f\t%f\t%f\t);\n", 0., 0., 20.);
+				fprintf(f, "\tfieldValues\n\t(\n\t\tvolScalarFieldValue\tregion\t1\n\t);\n}\n");
 			}
 		}
 	}
 	fprintf(f, ");\n");
 	fclose(f);
 
+	free(mass1);
+	free(snow_region);
 	free(max_otkl);
 	free(flag_x);
 	free(b_center);
@@ -396,12 +507,16 @@ int main(int argc, char **argv)
 
 	return 0;
 
-err_file:
-	fclose(f1);
-	printf("Error file\n");
 exit:
 	free(mass);
+	free(mass1);
 	free(ind);
 	free(bl_cond);
+err_file:
+	fclose(f);
+	fclose(f1);
+	printf("Error file\n");
+exit_without_massives:
+	printf("asc2dicts [map in ascii format] [divided times] [depth of snow]\n");
 	return 1;
 }
