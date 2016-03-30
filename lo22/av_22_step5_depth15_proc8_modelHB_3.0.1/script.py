@@ -38,9 +38,9 @@ avfoamDisplay = Show(avfoam, renderView1)
 avfoamDisplay.CubeAxesVisibility = 0
 avfoamDisplay.Representation = 'Surface'
 avfoamDisplay.AmbientColor = [1.0, 1.0, 1.0]
-avfoamDisplay.ColorArrayName = ['POINTS', 'p']
+avfoamDisplay.ColorArrayName = [None, '']
 avfoamDisplay.DiffuseColor = [1.0, 1.0, 1.0]
-#avfoamDisplay.LookupTable = pLUT
+avfoamDisplay.LookupTable = None
 avfoamDisplay.MapScalars = 1
 avfoamDisplay.InterpolateScalarsBeforeMapping = 1
 avfoamDisplay.Opacity = 1.0
@@ -121,31 +121,70 @@ avfoamDisplay.SelectionPointLabelShadow = 0
 # reset view to fit data
 renderView1.ResetCamera()
 
-# show color bar/color legend
-avfoamDisplay.SetScalarBarVisibility(renderView1, True)
+# set scalar coloring
+ColorBy(avfoamDisplay, ('FIELD', 'vtkBlockColors'))
 
-# get opacity transfer function/opacity map for 'p'
-pPWF = GetOpacityTransferFunction('p')
-pPWF.Points = [-162763.0, 0.0, 0.5, 0.0, 31605.099609375, 1.0, 0.5, 0.0]
-pPWF.AllowDuplicateScalars = 1
-pPWF.ScalarRangeInitialized = 1
+# show color bar/color legend
+#avfoamDisplay.SetScalarBarVisibility(renderView1, True)
+avfoamDisplay.SetScalarBarVisibility(renderView1, False)
+
+# get color transfer function/color map for 'vtkBlockColors'
+vtkBlockColorsLUT = GetColorTransferFunction('vtkBlockColors')
+vtkBlockColorsLUT.LockDataRange = 0
+vtkBlockColorsLUT.InterpretValuesAsCategories = 1
+vtkBlockColorsLUT.ShowCategoricalColorsinDataRangeOnly = 0
+vtkBlockColorsLUT.RescaleOnVisibilityChange = 0
+vtkBlockColorsLUT.EnableOpacityMapping = 0
+vtkBlockColorsLUT.RGBPoints = [0.0, 0.231373, 0.298039, 0.752941, 0.5, 0.865003, 0.865003, 0.865003, 1.0, 0.705882, 0.0156863, 0.14902]
+vtkBlockColorsLUT.UseLogScale = 0
+vtkBlockColorsLUT.ColorSpace = 'Diverging'
+vtkBlockColorsLUT.UseBelowRangeColor = 0
+vtkBlockColorsLUT.BelowRangeColor = [0.0, 0.0, 0.0]
+vtkBlockColorsLUT.UseAboveRangeColor = 0
+vtkBlockColorsLUT.AboveRangeColor = [1.0, 1.0, 1.0]
+vtkBlockColorsLUT.NanColor = [1.0, 1.0, 0.0]
+vtkBlockColorsLUT.Discretize = 1
+vtkBlockColorsLUT.NumberOfTableValues = 256
+vtkBlockColorsLUT.ScalarRangeInitialized = 0.0
+vtkBlockColorsLUT.HSVWrap = 0
+vtkBlockColorsLUT.VectorComponent = 0
+vtkBlockColorsLUT.VectorMode = 'Magnitude'
+vtkBlockColorsLUT.AllowDuplicateScalars = 1
+vtkBlockColorsLUT.Annotations = ['0', '0', '1', '1', '2', '2', '3', '3', '4', '4', '5', '5', '6', '6', '7', '7', '8', '8', '9', '9', '10', '10', '11', '11']
+vtkBlockColorsLUT.ActiveAnnotatedValues = ['0', '1', '2', '3']
+vtkBlockColorsLUT.IndexedColors = [1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.63, 0.63, 1.0, 0.67, 0.5, 0.33, 1.0, 0.5, 0.75, 0.53, 0.35, 0.7, 1.0, 0.75, 0.5]
+
+# get opacity transfer function/opacity map for 'vtkBlockColors'
+vtkBlockColorsPWF = GetOpacityTransferFunction('vtkBlockColors')
+vtkBlockColorsPWF.Points = [0.0, 0.0, 0.5, 0.0, 1.0, 1.0, 0.5, 0.0]
+vtkBlockColorsPWF.AllowDuplicateScalars = 1
+vtkBlockColorsPWF.ScalarRangeInitialized = 0
 
 # turn off scalar coloring
 ColorBy(avfoamDisplay, None)
 
-# change representation type
-avfoamDisplay.SetRepresentationType('Surface With Edges')
-
-# change representation type
-avfoamDisplay.SetRepresentationType('Surface')
+# Properties modified on avfoamDisplay
+avfoamDisplay.Opacity = 0.9
 
 # Properties modified on avfoamDisplay
-avfoamDisplay.Opacity = 0.31
+avfoamDisplay.Opacity = 0.8
+
+# Properties modified on avfoamDisplay
+avfoamDisplay.Opacity = 0.7
+
+# Properties modified on avfoamDisplay
+avfoamDisplay.Opacity = 0.69
+
+# Properties modified on avfoamDisplay
+avfoamDisplay.Opacity = 0.52
+
+# Properties modified on avfoamDisplay
+avfoamDisplay.Opacity = 0.36
 
 # create a new 'Iso Volume'
 isoVolume1 = IsoVolume(Input=avfoam)
-isoVolume1.InputScalars = ['POINTS', 'p']
-isoVolume1.ThresholdRange = [-162763.0, 31605.099609375]
+isoVolume1.InputScalars = ['POINTS', 'alpha.water']
+isoVolume1.ThresholdRange = [0.0, 0.0]
 
 # Properties modified on isoVolume1
 isoVolume1.InputScalars = ['POINTS', 'region']
@@ -157,9 +196,9 @@ isoVolume1Display = Show(isoVolume1, renderView1)
 isoVolume1Display.CubeAxesVisibility = 0
 isoVolume1Display.Representation = 'Surface'
 isoVolume1Display.AmbientColor = [1.0, 1.0, 1.0]
-isoVolume1Display.ColorArrayName = ['POINTS', 'p']
+isoVolume1Display.ColorArrayName = [None, '']
 isoVolume1Display.DiffuseColor = [1.0, 1.0, 1.0]
-#isoVolume1Display.LookupTable = pLUT
+isoVolume1Display.LookupTable = None
 isoVolume1Display.MapScalars = 1
 isoVolume1Display.InterpolateScalarsBeforeMapping = 1
 isoVolume1Display.Opacity = 1.0
@@ -236,11 +275,72 @@ isoVolume1Display.SelectionPointLabelItalic = 0
 isoVolume1Display.SelectionPointLabelJustification = 'Left'
 isoVolume1Display.SelectionPointLabelOpacity = 1.0
 isoVolume1Display.SelectionPointLabelShadow = 0
-isoVolume1Display.ScalarOpacityUnitDistance = 31.0233695029871
+isoVolume1Display.ScalarOpacityUnitDistance = 1.0
 isoVolume1Display.SelectMapper = 'Projected tetra'
+
+animationScene1.GoToNext()
+
+# set scalar coloring
+ColorBy(isoVolume1Display, ('POINTS', 'region'))
+
+# rescale color and/or opacity maps used to include current data range
+isoVolume1Display.RescaleTransferFunctionToDataRange(True)
 
 # show color bar/color legend
 isoVolume1Display.SetScalarBarVisibility(renderView1, True)
+
+# get color transfer function/color map for 'region'
+regionLUT = GetColorTransferFunction('region')
+regionLUT.LockDataRange = 0
+regionLUT.InterpretValuesAsCategories = 0
+regionLUT.ShowCategoricalColorsinDataRangeOnly = 0
+regionLUT.RescaleOnVisibilityChange = 0
+regionLUT.EnableOpacityMapping = 0
+regionLUT.RGBPoints = [0.5, 0.231373, 0.298039, 0.752941, 0.75, 0.865003, 0.865003, 0.865003, 1.0, 0.705882, 0.0156863, 0.14902]
+regionLUT.UseLogScale = 0
+regionLUT.ColorSpace = 'Diverging'
+regionLUT.UseBelowRangeColor = 0
+regionLUT.BelowRangeColor = [0.0, 0.0, 0.0]
+regionLUT.UseAboveRangeColor = 0
+regionLUT.AboveRangeColor = [1.0, 1.0, 1.0]
+regionLUT.NanColor = [1.0, 1.0, 0.0]
+regionLUT.Discretize = 1
+regionLUT.NumberOfTableValues = 256
+regionLUT.ScalarRangeInitialized = 1.0
+regionLUT.HSVWrap = 0
+regionLUT.VectorComponent = 0
+regionLUT.VectorMode = 'Magnitude'
+regionLUT.AllowDuplicateScalars = 1
+regionLUT.Annotations = []
+regionLUT.ActiveAnnotatedValues = []
+regionLUT.IndexedColors = []
+
+# get opacity transfer function/opacity map for 'region'
+regionPWF = GetOpacityTransferFunction('region')
+regionPWF.Points = [0.5, 0.0, 0.5, 0.0, 1.0, 1.0, 0.5, 0.0]
+regionPWF.AllowDuplicateScalars = 1
+regionPWF.ScalarRangeInitialized = 1
+
+# hide color bar/color legend
+isoVolume1Display.SetScalarBarVisibility(renderView1, False)
+
+# Apply a preset using its name. Note this may not work as expected when presets have duplicate names.
+regionLUT.ApplyPreset('Grayscale', True)
+
+# Properties modified on isoVolume1Display
+isoVolume1Display.Opacity = 0.96
+
+# Properties modified on isoVolume1Display
+isoVolume1Display.Opacity = 0.73
+
+# Properties modified on isoVolume1Display
+isoVolume1Display.Opacity = 0.42
+
+# Properties modified on isoVolume1Display
+isoVolume1Display.Opacity = 0.41
+
+# Properties modified on isoVolume1Display
+isoVolume1Display.Opacity = 0.39
 
 # set active source
 SetActiveSource(avfoam)
@@ -248,11 +348,37 @@ SetActiveSource(avfoam)
 # create a new 'Iso Volume'
 isoVolume2 = IsoVolume(Input=avfoam)
 isoVolume2.InputScalars = ['POINTS', 'p']
-isoVolume2.ThresholdRange = [-162763.0, 31605.099609375]
+isoVolume2.ThresholdRange = [-11428.8466796875, 31939.875]
 
 # Properties modified on isoVolume2
 isoVolume2.InputScalars = ['POINTS', 'alpha.water']
 isoVolume2.ThresholdRange = [0.5, 1.0]
+
+# get color transfer function/color map for 'p'
+pLUT = GetColorTransferFunction('p')
+pLUT.LockDataRange = 0
+pLUT.InterpretValuesAsCategories = 0
+pLUT.ShowCategoricalColorsinDataRangeOnly = 0
+pLUT.RescaleOnVisibilityChange = 0
+pLUT.EnableOpacityMapping = 0
+pLUT.RGBPoints = [-10267.3935546875, 0.231373, 0.298039, 0.752941, 6139.52783203125, 0.865003, 0.865003, 0.865003, 22546.44921875, 0.705882, 0.0156863, 0.14902]
+pLUT.UseLogScale = 0
+pLUT.ColorSpace = 'Diverging'
+pLUT.UseBelowRangeColor = 0
+pLUT.BelowRangeColor = [0.0, 0.0, 0.0]
+pLUT.UseAboveRangeColor = 0
+pLUT.AboveRangeColor = [1.0, 1.0, 1.0]
+pLUT.NanColor = [1.0, 1.0, 0.0]
+pLUT.Discretize = 1
+pLUT.NumberOfTableValues = 256
+pLUT.ScalarRangeInitialized = 1.0
+pLUT.HSVWrap = 0
+pLUT.VectorComponent = 0
+pLUT.VectorMode = 'Magnitude'
+pLUT.AllowDuplicateScalars = 1
+pLUT.Annotations = []
+pLUT.ActiveAnnotatedValues = []
+pLUT.IndexedColors = []
 
 # show data in view
 isoVolume2Display = Show(isoVolume2, renderView1)
@@ -262,7 +388,7 @@ isoVolume2Display.Representation = 'Surface'
 isoVolume2Display.AmbientColor = [1.0, 1.0, 1.0]
 isoVolume2Display.ColorArrayName = ['POINTS', 'p']
 isoVolume2Display.DiffuseColor = [1.0, 1.0, 1.0]
-#isoVolume2Display.LookupTable = pLUT
+isoVolume2Display.LookupTable = pLUT
 isoVolume2Display.MapScalars = 1
 isoVolume2Display.InterpolateScalarsBeforeMapping = 1
 isoVolume2Display.Opacity = 1.0
@@ -339,14 +465,17 @@ isoVolume2Display.SelectionPointLabelItalic = 0
 isoVolume2Display.SelectionPointLabelJustification = 'Left'
 isoVolume2Display.SelectionPointLabelOpacity = 1.0
 isoVolume2Display.SelectionPointLabelShadow = 0
-isoVolume2Display.ScalarOpacityUnitDistance = 29.764612881804705
+isoVolume2Display.ScalarOpacityUnitDistance = 31.53767060445273
 isoVolume2Display.SelectMapper = 'Projected tetra'
 
 # show color bar/color legend
 isoVolume2Display.SetScalarBarVisibility(renderView1, True)
 
-# Apply a preset using its name. Note this may not work as expected when presets have duplicate names.
-#pLUT.ApplyPreset('Blue to Red Rainbow', True)
+# get opacity transfer function/opacity map for 'p'
+pPWF = GetOpacityTransferFunction('p')
+pPWF.Points = [-10267.3935546875, 0.0, 0.5, 0.0, 22546.44921875, 1.0, 0.5, 0.0]
+pPWF.AllowDuplicateScalars = 1
+pPWF.ScalarRangeInitialized = 1
 
 # set scalar coloring
 ColorBy(isoVolume2Display, ('POINTS', 'U'))
@@ -364,7 +493,7 @@ uLUT.InterpretValuesAsCategories = 0
 uLUT.ShowCategoricalColorsinDataRangeOnly = 0
 uLUT.RescaleOnVisibilityChange = 0
 uLUT.EnableOpacityMapping = 0
-uLUT.RGBPoints = [0.0, 0.231373, 0.298039, 0.752941, 6.894620393744299, 0.865003, 0.865003, 0.865003, 13.789240787488598, 0.705882, 0.0156863, 0.14902]
+uLUT.RGBPoints = [0.0, 0.231373, 0.298039, 0.752941, 1.9878547454614568, 0.865003, 0.865003, 0.865003, 3.9757094909229136, 0.705882, 0.0156863, 0.14902]
 uLUT.UseLogScale = 0
 uLUT.ColorSpace = 'Diverging'
 uLUT.UseBelowRangeColor = 0
@@ -385,99 +514,17 @@ uLUT.IndexedColors = []
 
 # get opacity transfer function/opacity map for 'U'
 uPWF = GetOpacityTransferFunction('U')
-uPWF.Points = [0.0, 0.0, 0.5, 0.0, 13.789240787488598, 1.0, 0.5, 0.0]
+uPWF.Points = [0.0, 0.0, 0.5, 0.0, 3.9757094909229136, 1.0, 0.5, 0.0]
 uPWF.AllowDuplicateScalars = 1
 uPWF.ScalarRangeInitialized = 1
 
 # Apply a preset using its name. Note this may not work as expected when presets have duplicate names.
 uLUT.ApplyPreset('Blue to Red Rainbow', True)
 
-# set active source
-SetActiveSource(isoVolume1)
-
-# turn off scalar coloring
-ColorBy(isoVolume1Display, None)
-
-# set scalar coloring
-ColorBy(isoVolume1Display, ('POINTS', 'region'))
-
-# rescale color and/or opacity maps used to include current data range
-isoVolume1Display.RescaleTransferFunctionToDataRange(True)
-
-# show color bar/color legend
-isoVolume1Display.SetScalarBarVisibility(renderView1, True)
-
-# get color transfer function/color map for 'region'
-regionLUT = GetColorTransferFunction('region')
-regionLUT.LockDataRange = 0
-regionLUT.InterpretValuesAsCategories = 0
-regionLUT.ShowCategoricalColorsinDataRangeOnly = 0
-regionLUT.RescaleOnVisibilityChange = 0
-regionLUT.EnableOpacityMapping = 0
-regionLUT.RGBPoints = [0.5, 0.231373, 0.298039, 0.752941, 0.75, 0.865003, 0.865003, 0.865003, 1.0, 0.705882, 0.0156863, 0.14902]
-regionLUT.UseLogScale = 0
-regionLUT.ColorSpace = 'Diverging'
-regionLUT.UseBelowRangeColor = 0
-regionLUT.BelowRangeColor = [0.0, 0.0, 0.0]
-regionLUT.UseAboveRangeColor = 0
-regionLUT.AboveRangeColor = [1.0, 1.0, 1.0]
-regionLUT.NanColor = [1.0, 1.0, 0.0]
-regionLUT.Discretize = 1
-regionLUT.NumberOfTableValues = 256
-regionLUT.ScalarRangeInitialized = 1.0
-regionLUT.HSVWrap = 0
-regionLUT.VectorComponent = 0
-regionLUT.VectorMode = 'Magnitude'
-regionLUT.AllowDuplicateScalars = 1
-regionLUT.Annotations = []
-regionLUT.ActiveAnnotatedValues = []
-regionLUT.IndexedColors = []
-
-# get opacity transfer function/opacity map for 'region'
-regionPWF = GetOpacityTransferFunction('region')
-regionPWF.Points = [0.5, 0.0, 0.5, 0.0, 1.0, 1.0, 0.5, 0.0]
-regionPWF.AllowDuplicateScalars = 1
-regionPWF.ScalarRangeInitialized = 1
-
-# hide color bar/color legend
-isoVolume1Display.SetScalarBarVisibility(renderView1, False)
-
-#change interaction mode for render view
-renderView1.InteractionMode = '3D'
-
-# set active source
-SetActiveSource(isoVolume2)
-
-# rescale color and/or opacity maps used to exactly fit the current data range
-isoVolume2Display.RescaleTransferFunctionToDataRange(False)
-animationScene1.GoToLast()
-
-# rescale color and/or opacity maps used to exactly fit the current data range
-isoVolume2Display.RescaleTransferFunctionToDataRange(False)
-animationScene1.GoToFirst()
-
-# set active source
-SetActiveSource(isoVolume1)
-
-# rescale color and/or opacity maps used to exactly fit the current data range
-isoVolume1Display.RescaleTransferFunctionToDataRange(False)
-
-# Apply a preset using its name. Note this may not work as expected when presets have duplicate names.
-regionLUT.ApplyPreset('Grayscale', True)
-
-# Properties modified on isoVolume1Display
-isoVolume1Display.Opacity = 0.23
-
-#change interaction mode for render view
-renderView1.InteractionMode = '3D'
-
-# set active source
-SetActiveSource(isoVolume2)
-
 # get color legend/bar for uLUT in view renderView1
 uLUTColorBar = GetScalarBar(uLUT, renderView1)
-uLUTColorBar.Position = [0.8483093829247675, 0.5336138613861386]
-uLUTColorBar.Position2 = [0.12, 0.42999999999999994]
+uLUTColorBar.Position = [0.85, 0.05]
+uLUTColorBar.Position2 = [0.12, 0.43]
 uLUTColorBar.AutoOrient = 1
 uLUTColorBar.Orientation = 'Vertical'
 uLUTColorBar.Title = 'U'
@@ -517,28 +564,51 @@ uLUTColorBar.AspectRatio = 20.0
 uLUTColorBar.TitleColor = [0.0, 0.0, 0.0]
 uLUTColorBar.LabelColor = [0.0, 0.0, 0.0]
 
-# current camera placement for renderView1
-renderView1.CameraPosition = [138.25938737365402, -1496.8310670666774, 1522.6499051146018]
-renderView1.CameraFocalPoint = [601.6005138410403, 607.1159687625033, 544.3977178531848]
-renderView1.CameraViewUp = [-0.0021744084526305885, 0.42200728598466547, 0.9065898314694126]
-renderView1.CameraParallelScale = 506.1010249603391
+#animationScene1.Play()
+
+# rescale color and/or opacity maps used to exactly fit the current data range
+#isoVolume2Display.RescaleTransferFunctionToDataRange(False)
+isoVolume2Display.RescaleTransferFunctionToDataRange(True)
+
+# rescale color and/or opacity maps used to exactly fit the current data range
+isoVolume2Display.RescaleTransferFunctionToDataRange(False)
+animationScene1.GoToLast()
+
+# rescale color and/or opacity maps used to exactly fit the current data range
+isoVolume2Display.RescaleTransferFunctionToDataRange(False)
+animationScene1.GoToFirst()
+
+#animationScene1.Play()
+
+# save animation geometry from a view
+#WriteAnimationGeometry('/home/daria/OpenFOAM/avalanch/lo22/av_22_step5_depth15_proc8_modelHB_3.0.1/geometry.pvd', view=renderView1)
 
 # current camera placement for renderView1
-renderView1.CameraPosition = [138.25938737365402, -1496.8310670666774, 1522.6499051146018]
-renderView1.CameraFocalPoint = [601.6005138410403, 607.1159687625033, 544.3977178531848]
-renderView1.CameraViewUp = [-0.0021744084526305885, 0.42200728598466547, 0.9065898314694126]
-renderView1.CameraParallelScale = 506.1010249603391
+renderView1.CameraPosition = [-781.8588894832333, -2223.104388074451, 2008.0922484755408]
+renderView1.CameraFocalPoint = [565.0, 640.0, 597.7865447998047]
+renderView1.CameraViewUp = [0.06282988386587218, 0.4170661127018624, 0.9067018602215166]
+renderView1.CameraParallelScale = 896.5888378797637
+
+# current camera placement for renderView1
+renderView1.CameraPosition = [-781.8588894832333, -2223.104388074451, 2008.0922484755408]
+renderView1.CameraFocalPoint = [565.0, 640.0, 597.7865447998047]
+renderView1.CameraViewUp = [0.06282988386587218, 0.4170661127018624, 0.9067018602215166]
+renderView1.CameraParallelScale = 896.5888378797637
+
+view = GetActiveView()
+view.ViewSize = [ 1168, 820 ]
 
 # save animation images/movie
-WriteAnimation('/home/daria/OpenFOAM/avalanch/lo22/av_22_step5_depth15_proc8_modelHB_3.0.1/movie.ogv', Magnification=1, FrameRate=15.0, Compression=True)
+#WriteAnimation('/home/daria/OpenFOAM/avalanch/lo22/av_22_step5_depth15_proc8_modelHB_3.0.1/movie.ogv', Magnification=1, FrameRate=15.0, Compression=True)
+WriteAnimation('/home/daria/OpenFOAM/avalanch/lo22/av_22_step5_depth15_proc8_modelHB_3.0.1/pics/movie.ogv', Magnification=1, FrameRate=15.0, Compression=False)
 
 #### saving camera placements for all active views
 
 # current camera placement for renderView1
-renderView1.CameraPosition = [138.25938737365402, -1496.8310670666774, 1522.6499051146018]
-renderView1.CameraFocalPoint = [601.6005138410403, 607.1159687625033, 544.3977178531848]
-renderView1.CameraViewUp = [-0.0021744084526305885, 0.42200728598466547, 0.9065898314694126]
-renderView1.CameraParallelScale = 506.1010249603391
+renderView1.CameraPosition = [-781.8588894832333, -2223.104388074451, 2008.0922484755408]
+renderView1.CameraFocalPoint = [565.0, 640.0, 597.7865447998047]
+renderView1.CameraViewUp = [0.06282988386587218, 0.4170661127018624, 0.9067018602215166]
+renderView1.CameraParallelScale = 896.5888378797637
 
 #### uncomment the following to render all views
 # RenderAllViews()
