@@ -458,8 +458,8 @@ int main(int argc, char **argv)
 
 	f = fopen("setFieldsDict", "w");
 	fprintf(f, "FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tlocation\t\"system\";\n\tobject\tsetFieldsDict;\n}\n");
-	fprintf(f, "defaultFieldValues\n(\n\tvolScalarFieldValue\talpha.water\t0\n);\n");
-	fprintf(f, "defaultFieldValues\n(\n\tvolScalarFieldValue\tregion\t0\n);\n");
+	fprintf(f, "defaultFieldValues\n(\n\tvolScalarFieldValue\talpha.water\t0\n");
+	fprintf(f, "\tvolScalarFieldValue\tregion\t0\n);\n");
 	fprintf(f, "regions\n(\n");
 	for (i = 0; i < nrows - 1; i++) {
 		for (j = 0; j < ncols - 1; j++) {
