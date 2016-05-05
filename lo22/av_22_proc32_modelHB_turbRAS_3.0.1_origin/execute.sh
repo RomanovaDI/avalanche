@@ -21,4 +21,4 @@ mpirun -np 32 interFoam -parallel
 reconstructPar
 ./crutch_for_region.sh
 mkdir pics
-pvpython script4.py
+#pvpython script4.py
