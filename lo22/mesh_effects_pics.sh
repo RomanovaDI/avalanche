@@ -34,8 +34,8 @@ do
 for arg4 in $kz_ind
 do
 #cp -r ../av_22_proc32_modelHB_turbRAS_3.0.1_origin depth${depth[$arg1]}_kx${kx[$arg2]}_ky${ky[$arg3]}_kz${kz[$arg4]}
-cp ../av_22_proc32_modelHB_turbRAS_3.0.1_origin/system/controlDict depth${depth[$arg1]}_kx${kx[$arg2]}_ky${ky[$arg3]}_kz${kz[$arg4]}/system/controlDict
-cp ../av_22_proc32_modelHB_turbRAS_3.0.1_origin/execute1.sh depth${depth[$arg1]}_kx${kx[$arg2]}_ky${ky[$arg3]}_kz${kz[$arg4]}/execute.sh
+#cp ../av_22_proc32_modelHB_turbRAS_3.0.1_origin/system/controlDict depth${depth[$arg1]}_kx${kx[$arg2]}_ky${ky[$arg3]}_kz${kz[$arg4]}/system/controlDict
+#cp ../av_22_proc32_modelHB_turbRAS_3.0.1_origin/execute1.sh depth${depth[$arg1]}_kx${kx[$arg2]}_ky${ky[$arg3]}_kz${kz[$arg4]}/execute.sh
 cd depth${depth[$arg1]}_kx${kx[$arg2]}_ky${ky[$arg3]}_kz${kz[$arg4]}
 #sed "s/.\/a.out/.\/a.out relief_22.asc ${depth[$arg1]} region.asc ${kx[$arg2]} ${ky[$arg3]} ${kz[$arg4]}/" execute.sh > tmp
 #mv tmp execute.sh
