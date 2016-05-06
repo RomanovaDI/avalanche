@@ -40,7 +40,8 @@ cd depth${depth[$arg1]}_kx${kx[$arg2]}_ky${ky[$arg3]}_kz${kz[$arg4]}
 #sed "s/.\/a.out/.\/a.out relief_22.asc ${depth[$arg1]} region.asc ${kx[$arg2]} ${ky[$arg3]} ${kz[$arg4]}/" execute.sh > tmp
 #mv tmp execute.sh
 #chmod a+x execute.sh
-./run.sh
+#/run.sh
+pvpython script4.py
 cd ..
 done
 done
