@@ -1,0 +1,36 @@
+FoamFile
+{
+	version	2.0;
+	format	ascii;
+	class	volScalarField;
+	location	"0";
+	object	region;
+}
+
+dimensions	[0 0 0 0 0 0 0];
+
+internalField	nonuniform List<scalar>
+163372
+(
+)
+;
+
+boundaryField
+{
+	sides
+	{
+		type		inletOutlet;
+		inletValue	uniform 0;
+		value		uniform 0;
+	}
+	slope
+	{
+		type		zeroGradient;
+	}
+	atmosphere
+	{
+		type		inletOutlet;
+		inletValue	uniform 0;
+		value		uniform 0;
+	}
+}

@@ -169,7 +169,7 @@ int main(int argc, char **argv)
 				min_z = mass[i * ncols + j];
 			if ((mass[i * ncols + j] != nodata_value) && (mass[i * ncols + j] > max_z))
 				max_z = mass[i * ncols + j];
-			if ((i -1 >= 0) && (j + 1 < ncols) &&
+			if ((i - 1 >= 0) && (j + 1 < ncols) &&
 				(mass[i * ncols + j] != nodata_value) &&
 				(mass[(i - 1) * ncols + j] != nodata_value) &&
 				(mass[i * ncols + j + 1] != nodata_value) &&
