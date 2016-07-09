@@ -2,7 +2,7 @@
 set -x
 ./delete.sh
 cp 0/alpha.water.org 0/alpha.water
-cp 0/region.org 0/region
+#cp 0/region.org 0/region
 #cd map_creating
 #cp ../../asc2dicts2.c .
 #gcc asc2dicts2.c
@@ -14,11 +14,11 @@ cp 0/region.org 0/region
 #cp map_creating/alpha.water 0/alpha.water
 #cp map_creating/region 0/region
 blockMesh
-setFields
+#setFields
 decomposePar
-#mpirun -np 4 setFields -parallel
-mpirun -np 4 interFoam -parallel
+mpirun -np 32 setFields -parallel
+mpirun -np 32 interFoam -parallel
 reconstructPar
 #./crutch_for_region.sh
 mkdir pics
-pvpython script_30_angle_slope.py
+#pvpython script_30_angle_slope.py
