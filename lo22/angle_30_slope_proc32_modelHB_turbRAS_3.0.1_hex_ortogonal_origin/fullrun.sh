@@ -26,7 +26,7 @@ kz[5]="80"
 kz[6]="200"
 
 bl_pattern1="	hex (0 1 2 3 4 5 6 7) "
-bl_pattern2=" simpleGrading (1 1 1) // 0"
+bl_pattern2=" simpleGrading (1 1 1)"
 
 for arg1 in $kx_ind
 do
