@@ -35,7 +35,7 @@ do
 #for arg3 in $kz_ind
 #do
 mkdir kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
-cp -r 30_angle_slope_proc32_modelHB_turbRAS_3.0.1_hex_nonortogonal_origin/* kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
+cp -r angle_30_slope_proc32_modelHB_turbRAS_3.0.1_hex_nonortogonal_origin/* kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
 cd kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
 sed "s/bl_pattern/$bl_pattern1(${kx[$arg1]} ${ky[$arg1]} ${kz[$arg1]})$bl_pattern2/" system/blockMeshDict > tmp
 mv tmp system/blockMeshDict
