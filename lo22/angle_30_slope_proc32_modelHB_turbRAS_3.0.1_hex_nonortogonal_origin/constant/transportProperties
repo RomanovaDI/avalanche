@@ -20,23 +20,14 @@ phases (water air);
 water
 {
 	transportModel HerschelBulkley; 
-rho_pattern
+    rho             rho [ 1 -3 0 0 0 0 0 ] 200;
 	HerschelBulkleyCoeffs 
 	{ 
-nu0_pattern
-tau0_pattern
-k_pattern
-n_pattern
+		nu0             nu0   [ 0 2 -1 0 0 0 0 ] 1e5; 
+		tau0            tau0  [ 0 2 -2 0 0 0 0 ] 10; 
+		k               k     [ 0 2 -1 0 0 0 0 ] 5; 
+		n               n     [ 0 0  0 0 0 0 0 ] 5e-1; 
 	}
-//	transportModel HerschelBulkley; 
-//    rho             rho [ 1 -3 0 0 0 0 0 ] 200;
-//	HerschelBulkleyCoeffs 
-//	{ 
-//		nu0             nu0   [ 0 2 -1 0 0 0 0 ] 1e4; 
-//		tau0            tau0  [ 0 2 -2 0 0 0 0 ] 14; 
-//		k               k     [ 0 2 -1 0 0 0 0 ] 6; 
-//		n               n     [ 0 0  0 0 0 0 0 ] 5e-1; 
-//	}
 //    transportModel  Newtonian;
 //    nu              nu [ 0 2 -1 0 0 0 0 ] 1e-04;
 //    rho             rho [ 1 -3 0 0 0 0 0 ] 300;
