@@ -34,6 +34,7 @@ do
 #do
 #for arg3 in $kz_ind
 #do
+rm -rf kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
 mkdir kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
 cp -r angle_30_slope_proc32_modelHB_turbRAS_3.0.1_hex_nonortogonal_origin/* kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
 cd kx${kx[$arg1]}_ky${ky[$arg1]}_kz${kz[$arg1]}/
