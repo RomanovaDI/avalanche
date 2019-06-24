@@ -183,12 +183,14 @@ while not it.finished:
 file_blockMeshDict.write(");\n")
 file_blockMeshDict.write("blocks\n")
 file_blockMeshDict.write("(\n")
+altitude_interpolation_ind = np.copy(altitude_interpolation)
 ind = 0
 it = np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=["readonly"])
 while not it.finished:
 	if it[0] != NODATA_value:
-		file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 %d) simpleGrading (1 1 1)\n" % (ind, ind+1, ind+2, ind+3, ind+4, ind+5, ind+6, ind+7, int(hight / dx)))
-		ind += 8
+		file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 %d) simpleGrading (1 1 1)\n" % (8*ind, 8*ind+1, 8*ind+2, 8*ind+3, 8*ind+4, 8*ind+5, 8*ind+6, 8*ind+7, int(hight / dx)))
+		altitude_interpolation_ind[it.multi_index] = ind
+		ind += 1
 	it.iternext()
 file_blockMeshDict.write(");\n")
 file_blockMeshDict.write("edges\n")
@@ -196,9 +198,68 @@ file_blockMeshDict.write("(\n")
 file_blockMeshDict.write(");\n")
 file_blockMeshDict.write("boundary\n")
 file_blockMeshDict.write("(\n")
-file_blockMeshDict.write("")
-file_blockMeshDict.write("")
-file_blockMeshDict.write("")
+file_blockMeshDict.write("\tslope\n")
+file_blockMeshDict.write("\t{\n")
+file_blockMeshDict.write("\t\ttype wall;\n")
+file_blockMeshDict.write("\t\tfaces\n")
+file_blockMeshDict.write("\t\t(\n")
+it = np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=["readonly"])
+from operator import add
+while not it.finished:
+	if it[0] != NODATA_value:
+		if it.multi_index[0] - 1 >= 0:
+			neighbour_ind = tuple(map(add, it.multi_index, (-1, 0)))
+			if altitude_interpolation[neighbour_ind] != NODATA_value:
+				if altitude_interpolation[neighbour_ind] > it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+3, altitude_interpolation_ind[it.multi_index]+0, altitude_interpolation_ind[neighbour_ind]+1, altitude_interpolation_ind[neighbour_ind]+2))
+				elif altitude_interpolation[neighbour_ind] < it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+3, altitude_interpolation_ind[it.multi_index]+0, altitude_interpolation_ind[neighbour_ind]+1, altitude_interpolation_ind[neighbour_ind]+2))
+		if it.multi_index[1] - 1 >= 0:
+			neighbour_ind = tuple(map(add, it.multi_index, (0, -1)))
+			if altitude_interpolation[neighbour_ind] != NODATA_value:
+				if altitude_interpolation[neighbour_ind] > it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+0, altitude_interpolation_ind[it.multi_index]+1, altitude_interpolation_ind[neighbour_ind]+2, altitude_interpolation_ind[neighbour_ind]+3))
+				elif altitude_interpolation[neighbour_ind] < it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+0, altitude_interpolation_ind[it.multi_index]+1, altitude_interpolation_ind[neighbour_ind]+2, altitude_interpolation_ind[neighbour_ind]+3))
+	it.iternext()
+file_blockMeshDict.write("\t\t);\n")
+file_blockMeshDict.write("\t}\n")
+file_blockMeshDict.write(");\n")
+file_blockMeshDict.write("\tatmosphere\n")
+file_blockMeshDict.write("\t{\n")
+file_blockMeshDict.write("\t\ttype patch;\n")
+file_blockMeshDict.write("\t\tfaces\n")
+file_blockMeshDict.write("\t\t(\n")
+it = np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=["readonly"])
+while not it.finished:
+	if it[0] != NODATA_value:
+		if it.multi_index[0] - 1 >= 0:
+			neighbour_ind = tuple(map(add, it.multi_index, (-1, 0)))
+			if altitude_interpolation[neighbour_ind] != NODATA_value:
+				if altitude_interpolation[neighbour_ind] > it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+4, altitude_interpolation_ind[it.multi_index]+7, altitude_interpolation_ind[neighbour_ind]+6, altitude_interpolation_ind[neighbour_ind]+5))
+				elif altitude_interpolation[neighbour_ind] < it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+4, altitude_interpolation_ind[it.multi_index]+7, altitude_interpolation_ind[neighbour_ind]+6, altitude_interpolation_ind[neighbour_ind]+5))
+			else:
+				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+0, altitude_interpolation_ind[it.multi_index]+4, altitude_interpolation_ind[it.multi_index]+7, altitude_interpolation_ind[it.multi_index]+3))
+		if it.multi_index[0] + 1 < nx:
+			neighbour_ind = tuple(map(add, it.multi_index, (1, 0)))
+			if altitude_interpolation[neighbour_ind] == NODATA_value:
+				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+1, altitude_interpolation_ind[it.multi_index]+2, altitude_interpolation_ind[it.multi_index]+6, altitude_interpolation_ind[it.multi_index]+5))
+		if it.multi_index[1] - 1 >= 0:
+			neighbour_ind = tuple(map(add, it.multi_index, (0, -1)))
+			if altitude_interpolation[neighbour_ind] != NODATA_value:
+				if altitude_interpolation[neighbour_ind] > it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+5, altitude_interpolation_ind[it.multi_index]+4, altitude_interpolation_ind[neighbour_ind]+7, altitude_interpolation_ind[neighbour_ind]+6))
+				elif altitude_interpolation[neighbour_ind] < it[0]:
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+5, altitude_interpolation_ind[it.multi_index]+4, altitude_interpolation_ind[neighbour_ind]+7, altitude_interpolation_ind[neighbour_ind]+6))
+		if it.multi_index[1] + 1 < ny:
+			neighbour_ind = tuple(map(add, it.multi_index, (0, 1)))
+			if altitude_interpolation[neighbour_ind] == NODATA_value:
+				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (altitude_interpolation_ind[it.multi_index]+2, altitude_interpolation_ind[it.multi_index]+3, altitude_interpolation_ind[it.multi_index]+7, altitude_interpolation_ind[it.multi_index]+6))
+	it.iternext()
+file_blockMeshDict.write("\t\t);\n")
+file_blockMeshDict.write("\t}\n")
 file_blockMeshDict.write("")
 file_blockMeshDict.write("")
 file_blockMeshDict.write("")
