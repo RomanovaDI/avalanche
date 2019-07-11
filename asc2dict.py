@@ -94,63 +94,29 @@ altitude_interpolation = fv(altitude_interpolation)
 print(altitude_interpolation)
 print(altitude_interpolation[500, 500])
 
-#maximum = np.amax(altitude_interpolation)
-#with np.nditer(altitude_interpolation, op_flags=['readwrite']) as it:
-#	for x in it:
-#		if x == NODATA_value:
-#			x[...] = maximum + 1000
-#minimum = np.amin(altitude_interpolation)
-#with np.nditer(altitude_interpolation, op_flags=['readwrite']) as it:
-#	for x in it:
-#		if x == maximum + 1000:
-#			x[...] = NODATA_value
-#nz = (maximum - minimum + 50) / dx
-#blocks = np.zeros((nx, ny, nz))
-#it = np.nditer(blocks, flags=['multi_index'], op_flags=['writeonly'])
-#with it:
-#	while not it.finished:
-#		cell_alt = it.multi_index[2] * dx
-#		curr_alt = altitude_interpolation[it.multi_index[0], it.multi_index[1]]
-#		if cell_alt >= surr_alt and cell_alt < curr_alt + 50
-#			it[0] = 1
-#		it.iternext()
-#vertices = np.zeros((nx + 1, ny + 1, nz + 1))
-#it = np.nditer(vertices, flags=['multi_index'], op_flags=['writeonly'])
-#with it:
-#	while not it.finished:
-#		ind = it.multi_index
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		ind = it.multi_index - (1, 0, 0)
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		ind = it.multi_index - (0, 1, 0)
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		ind = it.multi_index - (0, 0, 1)
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		ind = it.multi_index - (1, 1, 0)
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		ind = it.multi_index - (1, 0, 1)
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		ind = it.multi_index - (0, 1, 1)
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		ind = it.multi_index - (1, 1, 1)
-#		if 0 <= ind[0] < nx and 0 <= ind[1] < ny and 0 <= ind[2] < nz:
-#			if blocks[ind] == 1
-#				it[0] = 1
-#		it.iternext()
+alt_max = np.amax(altitude_interpolation)
+alt_min = np.amin(altitude_interpolation)
+hight = 50
+hight = math.floor(hight / dx) * dx
+nz = (alt_max - alt_min + hight) / dx
+vertices = np.full((nx + 1, ny + 1, nz + 1), -1, dtype=int)
+blocks = np.zeros((nx, ny, nz), dtype=int)
+with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonly']) as it:
+	while not it.finished:
+		if it[0] != NODATA_value:
+			for z in range((it[0] - alt_min) / dx, (it[0] - alt_min + hight) / dx + 1):
+				vertices[it.multi_index[0], it.multi_index[1], z] = 1
+				vertices[it.multi_index[0] + 1, it.multi_index[1], z] = 1
+				vertices[it.multi_index[0], it.multi_index[1] + 1, z] = 1
+				vertices[it.multi_index[0] + 1, it.multi_index[1] + 1, z] = 1
+			for z in range((it[0] - alt_min) / dx, (it[0] - alt_min + hight) / dx):
+				blocks[it.multi_index[0], it.multi_index[1], z] = 1
+		it.iternext()
+ind = 0;
+for it in np.nditer(vertices, op_flag=['readwrite']):
+	if it == 1:
+		it = ind
+		ind += 1
 
 blockMeshDictFileName = "blockMeshDict"
 file_blockMeshDict = open(blockMeshDictFileName, "w")
@@ -166,32 +132,26 @@ file_blockMeshDict.write(str(dx))
 file_blockMeshDict.write(";\n")
 file_blockMeshDict.write("vertices\n")
 file_blockMeshDict.write("(\n")
-hight = 50
-hight = math.floor(hight / dx) * dx
-it = np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=["readonly"])
-while not it.finished:
-	if it[0] != NODATA_value:
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx, it.multi_index[1] * dx, it[0]))
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx + dx, it.multi_index[1] * dx, it[0]))
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx + dx, it.multi_index[1] * dx + dx, it[0]))
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx, it.multi_index[1] * dx + dx, it[0]))
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx, it.multi_index[1] * dx, it[0] + hight))
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx + dx, it.multi_index[1] * dx, it[0] + hight))
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx + dx, it.multi_index[1] * dx + dx, it[0] + hight))
-		file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx, it.multi_index[1] * dx + dx, it[0] + hight))
-	it.iternext()
+with np.nditer(vertices, flags=['multi_index'], op_flags=["readonly"]) as it:
+	while not it.finished:
+		if it[0] != -1:
+			file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx, it.multi_index[1] * dx, it.multi_index[2] * dx + alt_min))
+		it.iternext()
 file_blockMeshDict.write(");\n")
 file_blockMeshDict.write("blocks\n")
 file_blockMeshDict.write("(\n")
-altitude_interpolation_ind = np.copy(altitude_interpolation)
-ind = 0
-it = np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=["readonly"])
-while not it.finished:
-	if it[0] != NODATA_value:
-		file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 %d) simpleGrading (1 1 1)\n" % (8*ind, 8*ind+1, 8*ind+2, 8*ind+3, 8*ind+4, 8*ind+5, 8*ind+6, 8*ind+7, int(hight / dx)))
-		altitude_interpolation_ind[it.multi_index] = ind
-		ind += 1
-	it.iternext()
+with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
+	while not it.finished:
+		if it[0]:
+			vert1 = tuple(map(add, it.multi_index, (1, 0, 0)))
+			vert2 = tuple(map(add, it.multi_index, (0, 1, 0)))
+			vert3 = tuple(map(add, it.multi_index, (0, 0, 1)))
+			vert4 = tuple(map(add, it.multi_index, (1, 1, 0)))
+			vert5 = tuple(map(add, it.multi_index, (1, 0, 1)))
+			vert6 = tuple(map(add, it.multi_index, (0, 1, 1)))
+			vert7 = tuple(map(add, it.multi_index, (1, 1, 1)))
+			file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 1) simpleGrading (1 1 1)\n" % (vertices[it.multi_index], vertices[vert1], vertices[vert2], vertices[vert3], vertices[vert4], vertices[vert5], vertices[vert6], vertices[vert7]))
+		it.iternext()
 file_blockMeshDict.write(");\n")
 file_blockMeshDict.write("edges\n")
 file_blockMeshDict.write("(\n")
