@@ -58,8 +58,6 @@ import numpy as np
 altitude = np.loadtxt(file_map, dtype=np.str)
 file_map.close()
 altitude = np.char.replace(altitude, ',', '.').astype(np.float32)
-print(altitude)
-print(altitude[100, 100])
 
 altitude_mask = np.copy(altitude)
 f = lambda a: 0 if a == NODATA_value else 1
@@ -93,15 +91,10 @@ del altitude_interpolation_mask
 
 alt_max = np.amax(altitude_interpolation)
 alt_min = np.amin(altitude_interpolation[altitude_interpolation != NODATA_value])
-print("alt_max = %f, alt_min = %f" % (alt_max, alt_min))
 hight = 50
 hight = math.floor(hight / dx) * dx
 nz = int((alt_max - alt_min + hight) / dx)
-print("%d %d %d" % (nx, ny, nz))
-print(nx * ny * nz)
 vertices = np.full((nx + 1, ny + 1, nz + 1), -1, dtype=np.int32)
-print(altitude_interpolation.nbytes)
-print(vertices.nbytes)
 blocks = np.zeros((nx, ny, nz), dtype=np.int32)
 with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonly']) as it:
 	while not it.finished:
@@ -120,7 +113,6 @@ for it in np.nditer(vertices, op_flags=['readwrite']):
 	if it == 1:
 		it[...] = ind
 		ind += 1
-print(blocks.nbytes)
 del altitude_interpolation
 
 #from mpl_toolkits.mplot3d import Axes3D
@@ -176,46 +168,11 @@ file_blockMeshDict.write("(\n")
 file_blockMeshDict.write(");\n")
 file_blockMeshDict.write("boundary\n")
 file_blockMeshDict.write("(\n")
-#file_blockMeshDict.write(");\n")
 file_blockMeshDict.write("\tslope\n")
 file_blockMeshDict.write("\t{\n")
 file_blockMeshDict.write("\t\ttype wall;\n")
 file_blockMeshDict.write("\t\tfaces\n")
 file_blockMeshDict.write("\t\t(\n")
-
-#with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
-#	while not it.finished:
-#		if it[0] > 0:
-#			vert0 = it.multi_index
-#			vert1 = tuple(map(add, it.multi_index, (1, 0, 0)))
-#			vert2 = tuple(map(add, it.multi_index, (1, 1, 0)))
-#			vert3 = tuple(map(add, it.multi_index, (0, 1, 0)))
-#			vert4 = tuple(map(add, it.multi_index, (0, 0, 1)))
-#			vert5 = tuple(map(add, it.multi_index, (1, 0, 1)))
-#			vert6 = tuple(map(add, it.multi_index, (1, 1, 1)))
-#			vert7 = tuple(map(add, it.multi_index, (0, 1, 1)))
-#			neighbour_ind = tuple(map(add, it.multi_index, (1, 0, 0)))
-#			if neighbour_ind[0] < 0 or neighbour_ind[1] < 0 or neighbour_ind[2] < 0 or neighbour_ind[0] >= nx or neighbour_ind[1] >= ny or neighbour_ind[2] >= nz or blocks[neighbour_ind] == 0:
-#				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (vertices[vert1], vertices[vert2], vertices[vert6], vertices[vert5]))
-#			neighbour_ind = tuple(map(add, it.multi_index, (-1, 0, 0)))
-#			if neighbour_ind[0] < 0 or neighbour_ind[1] < 0 or neighbour_ind[2] < 0 or neighbour_ind[0] >= nx or neighbour_ind[1] >= ny or neighbour_ind[2] >= nz or blocks[neighbour_ind] == 0:
-#				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (vertices[vert0], vertices[vert4], vertices[vert7], vertices[vert3]))
-#			neighbour_ind = tuple(map(add, it.multi_index, (0, 1, 0)))
-#			if neighbour_ind[0] < 0 or neighbour_ind[1] < 0 or neighbour_ind[2] < 0 or neighbour_ind[0] >= nx or neighbour_ind[1] >= ny or neighbour_ind[2] >= nz or blocks[neighbour_ind] == 0:
-#				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (vertices[vert2], vertices[vert3], vertices[vert7], vertices[vert6]))
-#			neighbour_ind = tuple(map(add, it.multi_index, (0, -1, 0)))
-#			if neighbour_ind[0] < 0 or neighbour_ind[1] < 0 or neighbour_ind[2] < 0 or neighbour_ind[0] >= nx or neighbour_ind[1] >= ny or neighbour_ind[2] >= nz or blocks[neighbour_ind] == 0:
-#				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (vertices[vert0], vertices[vert1], vertices[vert5], vertices[vert4]))
-#			neighbour_ind = tuple(map(add, it.multi_index, (0, 0, 1)))
-#			if neighbour_ind[0] < 0 or neighbour_ind[1] < 0 or neighbour_ind[2] < 0 or neighbour_ind[0] >= nx or neighbour_ind[1] >= ny or neighbour_ind[2] >= nz or blocks[neighbour_ind] == 0:
-#				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (vertices[vert4], vertices[vert5], vertices[vert6], vertices[vert7]))
-#			neighbour_ind = tuple(map(add, it.multi_index, (0, 0, -1)))
-#			if neighbour_ind[0] < 0 or neighbour_ind[1] < 0 or neighbour_ind[2] < 0 or neighbour_ind[0] >= nx or neighbour_ind[1] >= ny or neighbour_ind[2] >= nz or blocks[neighbour_ind] == 0:
-#				file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (vertices[vert3], vertices[vert2], vertices[vert1], vertices[vert0]))
-#		it.iternext()
-#file_blockMeshDict.write("\t\t);\n")
-#file_blockMeshDict.write("\t}\n")
-#file_blockMeshDict.write(");\n")
 
 with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 	while not it.finished:
@@ -289,7 +246,7 @@ file_blockMeshDict.write("")
 file_blockMeshDict.write("")
 file_blockMeshDict.write("")
 file_blockMeshDict.close()
-
+print("blockMeshDict file is ready")
 
 
 del vertices
