@@ -54,6 +54,8 @@ if new_cellsize == "":
 else:
 	new_cellsize = float(new_cellsize)
 
+print("Creating blockMaeshDict file")
+
 import numpy as np
 altitude = np.loadtxt(file_map, dtype=np.str)
 file_map.close()
