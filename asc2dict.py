@@ -146,7 +146,7 @@ with np.nditer(vertices, flags=['multi_index'], op_flags=["readonly"]) as it:
 		if it[0] != -1:
 			file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * dx, it.multi_index[1] * dx, it.multi_index[2] * dx + alt_min))
 		it.iternext()
-file_blockMeshDict.write(");\n")
+file_blockMeshDict.write(");\n\n")
 file_blockMeshDict.write("blocks\n")
 file_blockMeshDict.write("(\n")
 from operator import add
@@ -164,10 +164,10 @@ with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 			file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 1) simpleGrading (1 1 1)\n" % \
 				(vertices[vert0], vertices[vert1], vertices[vert2], vertices[vert3], vertices[vert4], vertices[vert5], vertices[vert6], vertices[vert7]))
 		it.iternext()
-file_blockMeshDict.write(");\n")
+file_blockMeshDict.write(");\n\n")
 file_blockMeshDict.write("edges\n")
 file_blockMeshDict.write("(\n")
-file_blockMeshDict.write(");\n")
+file_blockMeshDict.write(");\n\n")
 file_blockMeshDict.write("boundary\n")
 file_blockMeshDict.write("(\n")
 file_blockMeshDict.write("\tslope\n")
@@ -240,8 +240,10 @@ with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 		it.iternext()
 file_blockMeshDict.write("\t\t);\n")
 file_blockMeshDict.write("\t}\n")
+file_blockMeshDict.write(");\n\n")
+file_blockMeshDict.write("mergePatchPairs\n")
+file_blockMeshDict.write("(\n")
 file_blockMeshDict.write(");\n")
-file_blockMeshDict.write("")
 file_blockMeshDict.write("")
 file_blockMeshDict.write("")
 file_blockMeshDict.write("")
