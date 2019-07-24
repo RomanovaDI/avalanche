@@ -15,7 +15,7 @@ ncols = int(line_list[1])
 line = file_map.readline()
 line_list = line.split()
 if line_list[0] != 'nrows':
-	print("No tag \"ncrows\" in second line")
+	print("No tag \"nrows\" in second line")
 	exit()
 nrows = int(line_list[1])
 
@@ -54,12 +54,72 @@ if new_cellsize == "":
 else:
 	new_cellsize = float(new_cellsize)
 
-print("Creating blockMaeshDict file")
+print("Write a file of ASCII region map or type enter and file name will be \"region_22.asc\"")
+region_map_name = input()
+if region_map_name == "":
+	region_map_name = "region_22.asc"
+print("Opening file: \"" + region_map_name + "\"")
+region_file_map = open(region_map_name, "r")
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'ncols':
+	print("No tag \"ncols\" in first line")
+	exit()
+region_ncols = int(line_list[1])
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'nrows':
+	print("No tag \"nrows\" in second line")
+	exit()
+region_nrows = int(line_list[1])
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'xllcorner':
+	print("No tag \"xllcorner\" in third line")
+	exit()
+region_xllcorner = float(line_list[1].replace(",", "."))
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'yllcorner':
+	print("No tag \"yllcorner\" in fourth line")
+	exit()
+region_yllcorner = float(line_list[1].replace(",", "."))
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'cellsize':
+	print("No tag \"cellsize\" in fifth line")
+	exit()
+region_cellsize = float(line_list[1].replace(",", "."))
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'NODATA_value':
+	print("No tag \"NODATA_value\" in sixth line")
+	exit()
+region_NODATA_value = float(line_list[1].replace(",", "."))
 
 import numpy as np
 altitude = np.loadtxt(file_map, dtype=np.str)
 file_map.close()
 altitude = np.char.replace(altitude, ',', '.').astype(np.float32)
+
+region = np.loadtxt(region_file_map, dtype=np.str)
+region_file_map.close()
+region = np.char.replace(altitude, ',', '.').astype(np.float32)
+
+if not xllcorner < region_xllcorner < xllcorner + ncols * cellsize:
+	print("Error pair of map and region map")
+	exit()
+if not yllcorner < region_yllcorner < yllcorner + nrow * cellsize:
+	print("Error pair of map and region map")
+	exit()
+
+print("Creating blockMaeshDict file")
 
 altitude_mask = np.copy(altitude)
 f = lambda a: 0 if a == NODATA_value else 1
@@ -93,7 +153,7 @@ del altitude_interpolation_mask
 
 alt_max = np.amax(altitude_interpolation)
 alt_min = np.amin(altitude_interpolation[altitude_interpolation != NODATA_value])
-hight = 50
+hight = 10
 hight = math.floor(hight / dx) * dx
 nz = int((alt_max - alt_min + hight) / dx)
 vertices = np.full((nx + 1, ny + 1, nz + 1), -1, dtype=np.int32)
@@ -173,6 +233,7 @@ file_blockMeshDict.write("(\n")
 file_blockMeshDict.write("\tslope\n")
 file_blockMeshDict.write("\t{\n")
 file_blockMeshDict.write("\t\ttype wall;\n")
+print("blockMeshDict file is ready")
 file_blockMeshDict.write("\t\tfaces\n")
 file_blockMeshDict.write("\t\t(\n")
 
@@ -251,6 +312,12 @@ file_blockMeshDict.write("")
 file_blockMeshDict.write("")
 file_blockMeshDict.close()
 print("blockMeshDict file is ready")
+
+print("Creating setFieldsDict file")
+
+
+
+print("setFieldsDict file is ready")
 
 
 del vertices
