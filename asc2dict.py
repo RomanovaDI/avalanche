@@ -110,12 +110,12 @@ altitude = np.char.replace(altitude, ',', '.').astype(np.float32)
 
 region = np.loadtxt(region_file_map, dtype=np.str)
 region_file_map.close()
-region = np.char.replace(altitude, ',', '.').astype(np.float32)
+region = np.char.replace(region, ',', '.').astype(np.float32)
 
 if not xllcorner < region_xllcorner < xllcorner + ncols * cellsize:
 	print("Error pair of map and region map")
 	exit()
-if not yllcorner < region_yllcorner < yllcorner + nrow * cellsize:
+if not yllcorner < region_yllcorner < yllcorner + nrows * cellsize:
 	print("Error pair of map and region map")
 	exit()
 
@@ -153,7 +153,7 @@ del altitude_interpolation_mask
 
 alt_max = np.amax(altitude_interpolation)
 alt_min = np.amin(altitude_interpolation[altitude_interpolation != NODATA_value])
-hight = 10
+hight = 50.0
 hight = math.floor(hight / dx) * dx
 nz = int((alt_max - alt_min + hight) / dx)
 vertices = np.full((nx + 1, ny + 1, nz + 1), -1, dtype=np.int32)
@@ -175,17 +175,6 @@ for it in np.nditer(vertices, op_flags=['readwrite']):
 	if it == 1:
 		it[...] = ind
 		ind += 1
-del altitude_interpolation
-
-#from mpl_toolkits.mplot3d import Axes3D
-#import matplotlib.pyplot as plt
-#fig = plt.figure()
-#ax = fig.gca(projection='3d')
-#xnew, ynew = np.meshgrid(xnew, ynew)
-##dots = ax.scatter(xnew, ynew, altitude_interpolation, s=0.5)
-#dots = ax.scatter(xnew, ynew, blocks[:, :, 50], s=0.5)
-##surf = ax.plot_surface(xnew, ynew, altitude_interpolation)
-#plt.show()
 
 blockMeshDictFileName = "blockMeshDict"
 file_blockMeshDict = open(blockMeshDictFileName, "w")
@@ -233,7 +222,6 @@ file_blockMeshDict.write("(\n")
 file_blockMeshDict.write("\tslope\n")
 file_blockMeshDict.write("\t{\n")
 file_blockMeshDict.write("\t\ttype wall;\n")
-print("blockMeshDict file is ready")
 file_blockMeshDict.write("\t\tfaces\n")
 file_blockMeshDict.write("\t\t(\n")
 
@@ -316,10 +304,79 @@ print("blockMeshDict file is ready")
 print("Creating setFieldsDict file")
 
 
+hight_of_snow = 8.0
+x_offset = int((region_xllcorner - xllcorner) / dx)
+y_offset = int((region_yllcorner - yllcorner) / dx)
+f = lambda a: 0 if a == region_NODATA_value else 1
+fv = np.vectorize(f)
+region = fv(region)
+x = np.arange(0, region_cellsize * region_ncols, region_cellsize)
+y = np.arange(0, region_cellsize * region_nrows, region_cellsize)
+xnew = np.arange(0, region_cellsize * region_ncols, new_cellsize)
+ynew = np.arange(0, region_cellsize * region_nrows, new_cellsize)
+f = interpolate.interp2d(x, y, region, kind='linear')
+region_interpolation = f(xnew, ynew)
+f = lambda a: 0 if a < 1 else 1
+fv = np.vectorize(f)
+region_interpolation = fv(region_interpolation)
+blocks = np.zeros((nx, ny, nz), dtype=np.float16)
+with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonly']) as it:
+	while not it.finished:
+		if it[0] != NODATA_value\
+			and 0 < it.multi_index[0] - x_offset < region_interpolation.shape[0]\
+			and 0 < it.multi_index[1] - y_offset < region_interpolation.shape[1]\
+			and region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] == 1:
+				for z in range(int((it[0] - alt_min) / dx), int(math.ceil((it[0] - alt_min + hight_of_snow) / dx))):
+					blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if z * dx < hight_of_snow else hight_of_snow / dx - z
+		it.iternext()
+
+setFieldsDictFileName = "setFieldsDict"
+file_setFieldsDict = open(setFieldsDictFileName, "w")
+file_setFieldsDict.write("FoamFile\n")
+file_setFieldsDict.write("{\n")
+file_setFieldsDict.write("    version     2.0;\n")
+file_setFieldsDict.write("    format      ascii;\n")
+file_setFieldsDict.write("    class       dictionary;\n")
+file_setFieldsDict.write("    location    \"system\";\n")
+file_setFieldsDict.write("    object      setFieldsDict;\n")
+file_setFieldsDict.write("}\n\n")
+file_setFieldsDict.write("defaultFieldValues\n")
+file_setFieldsDict.write("(\n")
+file_setFieldsDict.write("\tvolScalarFieldValue alpha.water 0\n")
+file_setFieldsDict.write(");\n\n")
+file_setFieldsDict.write("regions\n")
+file_setFieldsDict.write("(\n")
+with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
+	while not it.finished:
+		if it[0] != -1:
+			file_setFieldsDict.write("\tboxToCell\n")
+			file_setFieldsDict.write("\t{\n")
+			file_setFieldsDict.write("\t\tbox (%f\t%f\t%f) (%f\t%f\t%f);\n" %\
+				(it.multi_index[0] * dx, it.multi_index[1] * dx, it.multi_index[2] * dx + alt_min,\
+				it.multi_index[0] * dx + dx, it.multi_index[1] * dx + dx, it.multi_index[2] * dx + dx + alt_min))
+			file_setFieldsDict.write("\t\tfieldValues\n")
+			file_setFieldsDict.write("\t\t(\n")
+			file_setFieldsDict.write("\t\t\tvolScalarFieldValue alpha.water %f\n" % it[0])
+			file_setFieldsDict.write("\t\t);\n")
+			file_setFieldsDict.write("\t}\n")
+		it.iternext()
+file_setFieldsDict.write(");\n")
+
+file_setFieldsDict.close()
 
 print("setFieldsDict file is ready")
 
-
+del altitude_interpolation
 del vertices
 del blocks
+
+#from mpl_toolkits.mplot3d import Axes3D
+#import matplotlib.pyplot as plt
+#fig = plt.figure()
+#ax = fig.gca(projection='3d')
+#xnew, ynew = np.meshgrid(xnew, ynew)
+##dots = ax.scatter(xnew, ynew, altitude_interpolation, s=0.5)
+#dots = ax.scatter(xnew, ynew, blocks[:, :, 50], s=0.5)
+##surf = ax.plot_surface(xnew, ynew, altitude_interpolation)
+#plt.show()
 
