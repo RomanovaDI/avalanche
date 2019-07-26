@@ -153,7 +153,7 @@ del altitude_interpolation_mask
 
 alt_max = np.amax(altitude_interpolation)
 alt_min = np.amin(altitude_interpolation[altitude_interpolation != NODATA_value])
-hight = 50.0
+hight = 10.0
 hight = math.floor(hight / dx) * dx
 nz = int((alt_max - alt_min + hight) / dx)
 vertices = np.full((nx + 1, ny + 1, nz + 1), -1, dtype=np.int32)
@@ -316,18 +316,22 @@ xnew = np.arange(0, region_cellsize * region_ncols, new_cellsize)
 ynew = np.arange(0, region_cellsize * region_nrows, new_cellsize)
 f = interpolate.interp2d(x, y, region, kind='linear')
 region_interpolation = f(xnew, ynew)
+del region
 f = lambda a: 0 if a < 1 else 1
 fv = np.vectorize(f)
 region_interpolation = fv(region_interpolation)
+print(region_interpolation.shape)
+print(x_offset)
 blocks = np.zeros((nx, ny, nz), dtype=np.float16)
 with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonly']) as it:
 	while not it.finished:
 		if it[0] != NODATA_value\
-			and 0 < it.multi_index[0] - x_offset < region_interpolation.shape[0]\
-			and 0 < it.multi_index[1] - y_offset < region_interpolation.shape[1]\
+			and 0 <= it.multi_index[0] - x_offset < region_interpolation.shape[0]\
+			and 0 <= it.multi_index[1] - y_offset < region_interpolation.shape[1]\
 			and region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] == 1:
+				z_slope = int((it[0] - alt_min) / dx)
 				for z in range(int((it[0] - alt_min) / dx), int(math.ceil((it[0] - alt_min + hight_of_snow) / dx))):
-					blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if z * dx < hight_of_snow else hight_of_snow / dx - z
+					blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if (z - z_slope + 1) * dx < hight_of_snow else ((z - z_slope + 1) * dx - hight_of_snow) / dx
 		it.iternext()
 
 setFieldsDictFileName = "setFieldsDict"
@@ -348,7 +352,7 @@ file_setFieldsDict.write("regions\n")
 file_setFieldsDict.write("(\n")
 with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 	while not it.finished:
-		if it[0] != -1:
+		if it[0] != 0:
 			file_setFieldsDict.write("\tboxToCell\n")
 			file_setFieldsDict.write("\t{\n")
 			file_setFieldsDict.write("\t\tbox (%f\t%f\t%f) (%f\t%f\t%f);\n" %\
@@ -366,6 +370,7 @@ file_setFieldsDict.close()
 
 print("setFieldsDict file is ready")
 
+del region_interpolation
 del altitude_interpolation
 del vertices
 del blocks
