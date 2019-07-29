@@ -184,10 +184,8 @@ file_blockMeshDict.write("    version     2.0;\n")
 file_blockMeshDict.write("    format      ascii;\n")
 file_blockMeshDict.write("    class       dictionary;\n")
 file_blockMeshDict.write("    object      blockMeshDict;\n")
-file_blockMeshDict.write("}\n")
-file_blockMeshDict.write("convertToMeters ")
-file_blockMeshDict.write(str(dx))
-file_blockMeshDict.write(";\n")
+file_blockMeshDict.write("}\n\n")
+file_blockMeshDict.write("convertToMeters 1.0;\n\n")
 file_blockMeshDict.write("vertices\n")
 file_blockMeshDict.write("(\n")
 with np.nditer(vertices, flags=['multi_index'], op_flags=["readonly"]) as it:
@@ -304,10 +302,10 @@ print("blockMeshDict file is ready")
 print("Creating setFieldsDict file")
 
 
-hight_of_snow = 8.0
+hight_of_snow = 5.0
 x_offset = int((region_xllcorner - xllcorner) / dx)
 y_offset = int((region_yllcorner - yllcorner) / dx)
-f = lambda a: 0 if a == region_NODATA_value else 1
+f = lambda a: 0 if a == region_NODATA_value else a
 fv = np.vectorize(f)
 region = fv(region)
 x = np.arange(0, region_cellsize * region_ncols, region_cellsize)
@@ -317,7 +315,7 @@ ynew = np.arange(0, region_cellsize * region_nrows, new_cellsize)
 f = interpolate.interp2d(x, y, region, kind='linear')
 region_interpolation = f(xnew, ynew)
 del region
-f = lambda a: 0 if a < 1 else 1
+f = lambda a: 0 if 0 < a < 1 or 0 > a > -1 else (1 if a >= 1 else -1)
 fv = np.vectorize(f)
 region_interpolation = fv(region_interpolation)
 print(region_interpolation.shape)
@@ -328,10 +326,14 @@ with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonl
 		if it[0] != NODATA_value\
 			and 0 <= it.multi_index[0] - x_offset < region_interpolation.shape[0]\
 			and 0 <= it.multi_index[1] - y_offset < region_interpolation.shape[1]\
-			and region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] == 1:
-				z_slope = int((it[0] - alt_min) / dx)
-				for z in range(int((it[0] - alt_min) / dx), int(math.ceil((it[0] - alt_min + hight_of_snow) / dx))):
-					blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if (z - z_slope + 1) * dx < hight_of_snow else ((z - z_slope + 1) * dx - hight_of_snow) / dx
+			and region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] != 0:
+				if region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] == 1:
+					z_slope = int((it[0] - alt_min) / dx)
+					for z in range(int((it[0] - alt_min) / dx), int(math.ceil((it[0] - alt_min + hight_of_snow) / dx))):
+						blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if (z - z_slope + 1) * dx <= hight_of_snow else ((z - z_slope + 1) * dx - hight_of_snow) / dx
+				else:
+					for z in range(int((it[0] - alt_min) / dx), int((it[0] - alt_min + hight) / dx)):
+						blocks[it.multi_index[0], it.multi_index[1], z] = -1.0
 		it.iternext()
 
 setFieldsDictFileName = "setFieldsDict"
@@ -347,6 +349,7 @@ file_setFieldsDict.write("}\n\n")
 file_setFieldsDict.write("defaultFieldValues\n")
 file_setFieldsDict.write("(\n")
 file_setFieldsDict.write("\tvolScalarFieldValue alpha.water 0\n")
+file_setFieldsDict.write("\tvolScalarFieldValue deposit_area 0\n")
 file_setFieldsDict.write(");\n\n")
 file_setFieldsDict.write("regions\n")
 file_setFieldsDict.write("(\n")
@@ -360,7 +363,10 @@ with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 				it.multi_index[0] * dx + dx, it.multi_index[1] * dx + dx, it.multi_index[2] * dx + dx + alt_min))
 			file_setFieldsDict.write("\t\tfieldValues\n")
 			file_setFieldsDict.write("\t\t(\n")
-			file_setFieldsDict.write("\t\t\tvolScalarFieldValue alpha.water %f\n" % it[0])
+			if it[0] > 0:
+				file_setFieldsDict.write("\t\t\tvolScalarFieldValue alpha.water %f\n" % it[0])
+			else:
+				file_setFieldsDict.write("\t\t\tvolScalarFieldValue deposit_area %f\n" % it[0])
 			file_setFieldsDict.write("\t\t);\n")
 			file_setFieldsDict.write("\t}\n")
 		it.iternext()
