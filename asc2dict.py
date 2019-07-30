@@ -300,12 +300,10 @@ file_blockMeshDict.close()
 print("blockMeshDict file is ready")
 
 print("Creating setFieldsDict file")
-
-
-hight_of_snow = 5.0
+hight_of_snow = 8.0
 x_offset = int((region_xllcorner - xllcorner) / dx)
 y_offset = int((region_yllcorner - yllcorner) / dx)
-f = lambda a: 0 if a == region_NODATA_value else a
+f = lambda a: 0 if a == region_NODATA_value else (1 if a == 1 else -1)
 fv = np.vectorize(f)
 region = fv(region)
 x = np.arange(0, region_cellsize * region_ncols, region_cellsize)
@@ -315,11 +313,9 @@ ynew = np.arange(0, region_cellsize * region_nrows, new_cellsize)
 f = interpolate.interp2d(x, y, region, kind='linear')
 region_interpolation = f(xnew, ynew)
 del region
-f = lambda a: 0 if 0 < a < 1 or 0 > a > -1 else (1 if a >= 1 else -1)
+f = lambda a: 0 if (-1 < a < 1) else (1 if a >= 1 else -1)
 fv = np.vectorize(f)
 region_interpolation = fv(region_interpolation)
-print(region_interpolation.shape)
-print(x_offset)
 blocks = np.zeros((nx, ny, nz), dtype=np.float16)
 with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonly']) as it:
 	while not it.finished:
@@ -327,7 +323,7 @@ with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonl
 			and 0 <= it.multi_index[0] - x_offset < region_interpolation.shape[0]\
 			and 0 <= it.multi_index[1] - y_offset < region_interpolation.shape[1]\
 			and region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] != 0:
-				if region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] == 1:
+				if region_interpolation[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] == -1:
 					z_slope = int((it[0] - alt_min) / dx)
 					for z in range(int((it[0] - alt_min) / dx), int(math.ceil((it[0] - alt_min + hight_of_snow) / dx))):
 						blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if (z - z_slope + 1) * dx <= hight_of_snow else ((z - z_slope + 1) * dx - hight_of_snow) / dx
@@ -366,7 +362,7 @@ with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 			if it[0] > 0:
 				file_setFieldsDict.write("\t\t\tvolScalarFieldValue alpha.water %f\n" % it[0])
 			else:
-				file_setFieldsDict.write("\t\t\tvolScalarFieldValue deposit_area %f\n" % it[0])
+				file_setFieldsDict.write("\t\t\tvolScalarFieldValue deposit_area 1\n")
 			file_setFieldsDict.write("\t\t);\n")
 			file_setFieldsDict.write("\t}\n")
 		it.iternext()
