@@ -119,7 +119,7 @@ if not yllcorner < region_yllcorner < yllcorner + nrows * cellsize:
 	print("Error pair of map and region map")
 	exit()
 
-print("Creating blockMaeshDict file")
+print("Creating blockMeshDict file")
 
 altitude_mask = np.copy(altitude)
 f = lambda a: 0 if a == NODATA_value else 1
@@ -144,16 +144,16 @@ nx = ynew.shape[0]
 dx = new_cellsize
 del altitude
 del altitude_mask
+del altitude_interpolation_mask
 
 import math
 f = lambda a: math.floor(a / dx) * dx if a != 0 else NODATA_value
 fv = np.vectorize(f)
 altitude_interpolation = fv(altitude_interpolation)
-del altitude_interpolation_mask
 
 alt_max = np.amax(altitude_interpolation)
 alt_min = np.amin(altitude_interpolation[altitude_interpolation != NODATA_value])
-hight = 10.0
+hight = 50.0
 hight = math.floor(hight / dx) * dx
 nz = int((alt_max - alt_min + hight) / dx)
 vertices = np.full((nx + 1, ny + 1, nz + 1), -1, dtype=np.int32)
@@ -302,7 +302,7 @@ del vertices
 del blocks
 
 print("Creating setFieldsDict file")
-hight_of_snow = 8.0
+hight_of_snow = 12.0
 x_offset = int((region_xllcorner - xllcorner) / dx)
 y_offset = int((region_yllcorner - yllcorner) / dx)
 f = lambda a: 0 if a == region_NODATA_value else (1 if a == 1 else -1)
