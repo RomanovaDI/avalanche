@@ -298,6 +298,8 @@ file_blockMeshDict.write("")
 file_blockMeshDict.write("")
 file_blockMeshDict.close()
 print("blockMeshDict file is ready")
+del vertices
+del blocks
 
 print("Creating setFieldsDict file")
 hight_of_snow = 8.0
@@ -374,7 +376,6 @@ print("setFieldsDict file is ready")
 
 del region_interpolation
 del altitude_interpolation
-del vertices
 del blocks
 
 #from mpl_toolkits.mplot3d import Axes3D
