@@ -157,7 +157,7 @@ hight = 50.0
 hight = math.floor(hight / dx) * dx
 nz = int((alt_max - alt_min + hight) / dx)
 vertices = np.full((nx + 1, ny + 1, nz + 1), -1, dtype=np.int32)
-blocks = np.zeros((nx, ny, nz), dtype=np.int32)
+blocks = np.zeros((nx, ny, nz), dtype=np.float32)
 with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonly']) as it:
 	while not it.finished:
 		if it[0] != NODATA_value:
@@ -299,7 +299,6 @@ file_blockMeshDict.write("")
 file_blockMeshDict.close()
 print("blockMeshDict file is ready")
 del vertices
-del blocks
 
 print("Creating setFieldsDict file")
 hight_of_snow = 12.0
@@ -318,7 +317,8 @@ del region
 f = lambda a: 0 if (-1 < a < 1) else (1 if a >= 1 else -1)
 fv = np.vectorize(f)
 region_interpolation = fv(region_interpolation)
-blocks = np.zeros((nx, ny, nz), dtype=np.float16)
+blocks[blocks == 0] = NODATA_value
+blocks[blocks != NODATA_value] = 0
 with np.nditer(altitude_interpolation, flags=['multi_index'], op_flags=['readonly']) as it:
 	while not it.finished:
 		if it[0] != NODATA_value\
@@ -353,7 +353,7 @@ file_setFieldsDict.write("regions\n")
 file_setFieldsDict.write("(\n")
 with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 	while not it.finished:
-		if it[0] != 0:
+		if it[0] != 0 and it[0] != NODATA_value:
 			file_setFieldsDict.write("\tboxToCell\n")
 			file_setFieldsDict.write("\t{\n")
 			file_setFieldsDict.write("\t\tbox (%f\t%f\t%f) (%f\t%f\t%f);\n" %\
@@ -374,6 +374,47 @@ file_setFieldsDict.close()
 
 print("setFieldsDict file is ready")
 
+print("Creating alpha.water file")
+num_blocks = len(blocks[blocks != NODATA_value])
+alphawaterFileName = "alpha.water"
+file_alphawater = open(alphawaterFileName, "w")
+file_alphawater.write("FoamFile\n")
+file_alphawater.write("{\n")
+file_alphawater.write("    version     2.0;\n")
+file_alphawater.write("    format      ascii;\n")
+file_alphawater.write("    class       volScalarField;\n")
+file_alphawater.write("    location    \"0\";\n")
+file_alphawater.write("    object      alpha.water;\n")
+file_alphawater.write("}\n\n")
+file_alphawater.write("dimensions [0 0 0 0 0 0 0];\n")
+file_alphawater.write("internalField nonuniform List<scalar>\n")
+file_alphawater.write("%d\n" % num_blocks)
+file_alphawater.write("(\n")
+for it in np.nditer(blocks):
+	if it != NODATA_value:
+		file_alphawater.write("%f\n" % it)
+file_alphawater.write(")\n;\n")
+file_alphawater.write("boundaryField\n")
+file_alphawater.write("{\n")
+file_alphawater.write("\tslope\n")
+file_alphawater.write("\t{\n")
+file_alphawater.write("\t\ttype\t\tzeroGradient;\n")
+file_alphawater.write("\t}\n")
+file_alphawater.write("\tatmosphere\n")
+file_alphawater.write("\t{\n")
+file_alphawater.write("\t\ttype\t\tinletOutlet;\n")
+file_alphawater.write("\t\tinletValue\tuniform 0;\n")
+file_alphawater.write("\t\tvalue\t\tuniform 0;\n")
+file_alphawater.write("\t}\n")
+file_alphawater.write("\tdefaultFaces\n")
+file_alphawater.write("\t{\n")
+file_alphawater.write("\t\ttype\t\tempty;\n")
+file_alphawater.write("\t}\n")
+file_alphawater.write("}\n")
+
+file_alphawater.close()
+
+print("alpha.water file is ready")
 del region_interpolation
 del altitude_interpolation
 del blocks
