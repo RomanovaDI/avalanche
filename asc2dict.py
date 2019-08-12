@@ -391,7 +391,7 @@ file_alphawater.write("internalField nonuniform List<scalar>\n")
 file_alphawater.write("%d\n" % num_blocks)
 file_alphawater.write("(\n")
 for it in np.nditer(blocks):
-	if it != NODATA_value:
+	if it != NODATA_value and it >= 0:
 		file_alphawater.write("%f\n" % it)
 file_alphawater.write(")\n;\n")
 file_alphawater.write("boundaryField\n")
@@ -415,6 +415,49 @@ file_alphawater.write("}\n")
 file_alphawater.close()
 
 print("alpha.water file is ready")
+
+print("Creating deposit_area file")
+
+depositAreaFileName = "deposit_area"
+file_depositArea = open(depositAreaFileName, "w")
+file_depositArea.write("FoamFile\n")
+file_depositArea.write("{\n")
+file_depositArea.write("    version     2.0;\n")
+file_depositArea.write("    format      ascii;\n")
+file_depositArea.write("    class       volScalarField;\n")
+file_depositArea.write("    location    \"0\";\n")
+file_depositArea.write("    object      deposit_area;\n")
+file_depositArea.write("}\n\n")
+file_depositArea.write("dimensions [0 0 0 0 0 0 0];\n")
+file_depositArea.write("internalField nonuniform List<scalar>\n")
+file_depositArea.write("%d\n" % num_blocks)
+file_depositArea.write("(\n")
+for it in np.nditer(blocks):
+	if it != NODATA_value and it <= 0:
+		file_depositArea.write("%f\n" % it)
+file_depositArea.write(")\n;\n")
+file_depositArea.write("boundaryField\n")
+file_depositArea.write("{\n")
+file_depositArea.write("\tslope\n")
+file_depositArea.write("\t{\n")
+file_depositArea.write("\t\ttype\t\tzeroGradient;\n")
+file_depositArea.write("\t}\n")
+file_depositArea.write("\tatmosphere\n")
+file_depositArea.write("\t{\n")
+file_depositArea.write("\t\ttype\t\tinletOutlet;\n")
+file_depositArea.write("\t\tinletValue\tuniform 0;\n")
+file_depositArea.write("\t\tvalue\t\tuniform 0;\n")
+file_depositArea.write("\t}\n")
+file_depositArea.write("\tdefaultFaces\n")
+file_depositArea.write("\t{\n")
+file_depositArea.write("\t\ttype\t\tempty;\n")
+file_depositArea.write("\t}\n")
+file_depositArea.write("}\n")
+
+file_depositArea.close()
+
+print("deposit_area file is ready")
+
 del region_interpolation
 del altitude_interpolation
 del blocks
