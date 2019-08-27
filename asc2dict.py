@@ -391,8 +391,11 @@ file_alphawater.write("internalField nonuniform List<scalar>\n")
 file_alphawater.write("%d\n" % num_blocks)
 file_alphawater.write("(\n")
 for it in np.nditer(blocks):
-	if it != NODATA_value and it >= 0:
-		file_alphawater.write("%f\n" % it)
+	if it != NODATA_value:
+		if it >= 0:
+			file_alphawater.write("%f\n" % it)
+		else:
+			file_alphawater.write("%f\n" % 0.0)
 file_alphawater.write(")\n;\n")
 file_alphawater.write("boundaryField\n")
 file_alphawater.write("{\n")
@@ -433,8 +436,11 @@ file_depositArea.write("internalField nonuniform List<scalar>\n")
 file_depositArea.write("%d\n" % num_blocks)
 file_depositArea.write("(\n")
 for it in np.nditer(blocks):
-	if it != NODATA_value and it <= 0:
-		file_depositArea.write("%f\n" % it)
+	if it != NODATA_value:
+		if it <= 0:
+			file_depositArea.write("%f\n" % it)
+		else:
+			file_depositArea.write("%f\n" % 0.0)
 file_depositArea.write(")\n;\n")
 file_depositArea.write("boundaryField\n")
 file_depositArea.write("{\n")
