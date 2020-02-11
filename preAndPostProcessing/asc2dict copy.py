@@ -1,145 +1,151 @@
+print("Write a file of ASCII map or type enter and file name will be \"relief_22.asc\"")
+map_name = input()
+if map_name == "":
+	map_name = "relief_22.asc"
+print("Opening file: \"" + map_name + "\"")
+file_map = open(map_name, "r")
+
+line = file_map.readline()
+line_list = line.split()
+if line_list[0] != 'ncols':
+	print("No tag \"ncols\" in first line")
+	exit()
+ncols = int(line_list[1])
+
+line = file_map.readline()
+line_list = line.split()
+if line_list[0] != 'nrows':
+	print("No tag \"nrows\" in second line")
+	exit()
+nrows = int(line_list[1])
+
+line = file_map.readline()
+line_list = line.split()
+if line_list[0] != 'xllcorner':
+	print("No tag \"xllcorner\" in third line")
+	exit()
+xllcorner = float(line_list[1].replace(",", "."))
+
+line = file_map.readline()
+line_list = line.split()
+if line_list[0] != 'yllcorner':
+	print("No tag \"yllcorner\" in fourth line")
+	exit()
+yllcorner = float(line_list[1].replace(",", "."))
+
+line = file_map.readline()
+line_list = line.split()
+if line_list[0] != 'cellsize':
+	print("No tag \"cellsize\" in fifth line")
+	exit()
+cellsize = float(line_list[1].replace(",", "."))
+
+line = file_map.readline()
+line_list = line.split()
+if line_list[0] != 'NODATA_value':
+	print("No tag \"NODATA_value\" in sixth line")
+	exit()
+NODATA_value = float(line_list[1].replace(",", "."))
+
+print("Write new cell size if necessary:")
+new_cellsize = input()
+if new_cellsize == "":
+	new_cellsize = cellsize
+else:
+	new_cellsize = float(new_cellsize)
+
+print("Write a file of ASCII region map or type enter and file name will be \"region_22.asc\"")
+region_map_name = input()
+if region_map_name == "":
+	region_map_name = "region_22.asc"
+print("Opening file: \"" + region_map_name + "\"")
+region_file_map = open(region_map_name, "r")
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'ncols':
+	print("No tag \"ncols\" in first line")
+	exit()
+region_ncols = int(line_list[1])
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'nrows':
+	print("No tag \"nrows\" in second line")
+	exit()
+region_nrows = int(line_list[1])
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'xllcorner':
+	print("No tag \"xllcorner\" in third line")
+	exit()
+region_xllcorner = float(line_list[1].replace(",", "."))
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'yllcorner':
+	print("No tag \"yllcorner\" in fourth line")
+	exit()
+region_yllcorner = float(line_list[1].replace(",", "."))
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'cellsize':
+	print("No tag \"cellsize\" in fifth line")
+	exit()
+region_cellsize = float(line_list[1].replace(",", "."))
+
+line = region_file_map.readline()
+line_list = line.split()
+if line_list[0] != 'NODATA_value':
+	print("No tag \"NODATA_value\" in sixth line")
+	exit()
+region_NODATA_value = float(line_list[1].replace(",", "."))
+
 import numpy as np
-from scipy import interpolate
-from operator import add
+altitude = np.loadtxt(file_map, dtype=np.str)
+file_map.close()
+altitude = np.char.replace(altitude, ',', '.').astype(np.float32)
 
-class asc:
-	def readFileNames(self):
-		print("Write a file of ASCII map or type enter and file name will be \"relief_22.asc\"")
-		self.map_name = input()
-		if self.map_name == "":
-			self.map_name = "relief_22.asc"
-		print("Write a file of ASCII region map or type enter and file name will be \"region_22.asc\"")
-		self.region_map_name = input()
-		if self.region_map_name == "":
-			self.region_map_name = "region_22.asc"
+region = np.loadtxt(region_file_map, dtype=np.str)
+region_file_map.close()
+region = np.char.replace(region, ',', '.').astype(np.float32)
 
-	def readMapFile(self):
-		print("Opening file: \"" + self.map_name + "\"")
-		file_map = open(self.map_name, "r")
-
-		line = file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'ncols':
-			raise ValueError('No tag \"ncols\" in first line')
-		self.ncols = int(line_list[1])
-
-		line = file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'nrows':
-			raise ValueError('No tag \"nrows\" in second line')
-		self.nrows = int(line_list[1])
-
-		line = file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'xllcorner':
-			raise ValueError('No tag \"xllcorner\" in third line')
-		self.xllcorner = float(line_list[1].replace(",", "."))
-
-		line = file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'yllcorner':
-			raise ValueError('No tag \"yllcorner\" in fourth line')
-		self.yllcorner = float(line_list[1].replace(",", "."))
-
-		line = file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'cellsize':
-			raise ValueError('No tag \"cellsize\" in fifth line')
-		self.cellsize = float(line_list[1].replace(",", "."))
-
-		line = file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'NODATA_value':
-			raise ValueError('No tag \"NODATA_value\" in sixth line')
-		self.NODATA_value = float(line_list[1].replace(",", "."))
-
-		print("Write new cell size if necessary:")
-		self.new_cellsize = input()
-		if new_cellsize == "":
-			self.new_cellsize = self.cellsize
-		else:
-			self.new_cellsize = float(self.new_cellsize)
-
-		self.altitude = np.loadtxt(file_map, dtype=np.str)
-		file_map.close()
-		self.altitude = np.char.replace(altitude, ',', '.').astype(np.float32)
-
-	def readRegionFile(self):
-		print("Opening file: \"" + self.region_map_name + "\"")
-		region_file_map = open(self.region_map_name, "r")
-
-		line = region_file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'ncols':
-			raise ValueError('No tag \"ncols\" in first line')
-		self.region_ncols = int(line_list[1])
-
-		line = region_file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'nrows':
-			raise ValueError('No tag \"nrows\" in second line')
-		self.region_nrows = int(line_list[1])
-
-		line = region_file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'xllcorner':
-			raise ValueError('No tag \"xllcorner\" in third line')
-		self.region_xllcorner = float(line_list[1].replace(",", "."))
-
-		line = region_file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'yllcorner':
-			raise ValueError('No tag \"yllcorner\" in fourth line')
-		self.region_yllcorner = float(line_list[1].replace(",", "."))
-
-		line = region_file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'cellsize':
-			raise ValueError('No tag \"cellsize\" in fifth line')
-		self.region_cellsize = float(line_list[1].replace(",", "."))
-
-		line = region_file_map.readline()
-		line_list = line.split()
-		if line_list[0] != 'NODATA_value':
-			raise ValueError('No tag \"NODATA_value\" in sixth line')
-		self.region_NODATA_value = float(line_list[1].replace(",", "."))
-
-		self.region = np.loadtxt(region_file_map, dtype=np.str)
-		region_file_map.close()
-		self.region = np.char.replace(region, ',', '.').astype(np.float32)
-
-	def checkPair(self):
-		if not xllcorner <= region_xllcorner <= xllcorner + ncols * cellsize:
-			raise ValueError('Error pair of map and region map')
-		if not yllcorner <= region_yllcorner <= yllcorner + nrows * cellsize:
-			raise ValueError('Error pair of map and region map')
-
-	def interpolateMap(self):
-		altitude_mask = np.copy(self.altitude)
-		f = lambda a: 0 if a == NODATA_value else 1
-		fv = np.vectorize(f)
-		altitude_mask = fv(altitude_mask)
-
-		x = np.arange(0, self.cellsize * self.ncols, self.cellsize)
-		y = np.arange(0, self.cellsize * self.nrows, self.cellsize)
-		xnew = np.arange(0, self.cellsize * self.ncols, self.new_cellsize)
-		ynew = np.arange(0, self.cellsize * self.nrows, self.new_cellsize)
-		f = interpolate.interp2d(x, y, self.altitude, kind='linear')
-		altitude_interpolation = f(xnew, ynew)
-		f = interpolate.interp2d(x, y, altitude_mask, kind='linear')
-		altitude_interpolation_mask = f(xnew, ynew)
-		f = lambda a: 0 if a < 1 else 1
-		fv = np.vectorize(f)
-		altitude_interpolation_mask = fv(altitude_interpolation_mask)
-		altitude_interpolation = altitude_interpolation * altitude_interpolation_mask
-		self.ny = xnew.shape[0]
-		self.nx = ynew.shape[0]
-		self.dx = self.new_cellsize
-		self.altitude = altitude_interpolation
-		del altitude_mask
-		del altitude_interpolation_mask
+if not xllcorner <= region_xllcorner <= xllcorner + ncols * cellsize:
+	print("Error pair of map and region map")
+	exit()
+if not yllcorner <= region_yllcorner <= yllcorner + nrows * cellsize:
+	print("Error pair of map and region map")
+	exit()
 
 print("Creating blockMeshDict file")
+
+altitude_mask = np.copy(altitude)
+f = lambda a: 0 if a == NODATA_value else 1
+fv = np.vectorize(f)
+altitude_mask = fv(altitude_mask)
+
+from scipy import interpolate
+x = np.arange(0, cellsize * ncols, cellsize)
+y = np.arange(0, cellsize * nrows, cellsize)
+xnew = np.arange(0, cellsize * ncols, new_cellsize)
+ynew = np.arange(0, cellsize * nrows, new_cellsize)
+f = interpolate.interp2d(x, y, altitude, kind='linear')
+altitude_interpolation = f(xnew, ynew)
+f = interpolate.interp2d(x, y, altitude_mask, kind='linear')
+altitude_interpolation_mask = f(xnew, ynew)
+f = lambda a: 0 if a < 1 else 1
+fv = np.vectorize(f)
+altitude_interpolation_mask = fv(altitude_interpolation_mask)
+altitude_interpolation = altitude_interpolation * altitude_interpolation_mask
+ny = xnew.shape[0]
+nx = ynew.shape[0]
+dx = new_cellsize
+del altitude
+del altitude_mask
+del altitude_interpolation_mask
+
 import math
 f = lambda a: math.floor(a / dx) * dx if a != 0 else NODATA_value
 fv = np.vectorize(f)
@@ -179,8 +185,16 @@ n_blocks = ind
 
 blockMeshDictFileName = "blockMeshDict"
 file_blockMeshDict = open(blockMeshDictFileName, "w")
-file_blockMeshDict.write("FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tobject\tblockMeshDict;\n}\n\nconvertToMeters 1.0;\n\n")
-file_blockMeshDict.write("vertices\n(\n")
+file_blockMeshDict.write("FoamFile\n")
+file_blockMeshDict.write("{\n")
+file_blockMeshDict.write("    version     2.0;\n")
+file_blockMeshDict.write("    format      ascii;\n")
+file_blockMeshDict.write("    class       dictionary;\n")
+file_blockMeshDict.write("    object      blockMeshDict;\n")
+file_blockMeshDict.write("}\n\n")
+file_blockMeshDict.write("convertToMeters 1.0;\n\n")
+file_blockMeshDict.write("vertices\n")
+file_blockMeshDict.write("(\n")
 n_vertices = 0
 with np.nditer(vertices, flags=['multi_index'], op_flags=["readonly"]) as it:
 	while not it.finished:
@@ -191,6 +205,7 @@ with np.nditer(vertices, flags=['multi_index'], op_flags=["readonly"]) as it:
 file_blockMeshDict.write(");\n\n")
 file_blockMeshDict.write("blocks\n")
 file_blockMeshDict.write("(\n")
+from operator import add
 with np.nditer(blocks, flags=['multi_index'], op_flags=["readonly"]) as it:
 	while not it.finished:
 		if it[0]:
