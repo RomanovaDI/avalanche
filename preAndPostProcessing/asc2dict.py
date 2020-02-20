@@ -550,6 +550,82 @@ class files:
 		file_depositArea.close()
 		print("deposit_area file is ready")
 
+	def createOBJ(self):
+		print("Creating OBJ file.")
+		file_obj = open("slope.obj", "w")
+		alt_ind = np.zeros_like(self.sd.altitude)
+		with np.nditer(self.sd.altitude, flags=['multi_index'], op_flags=['readonly']) as it:
+			while not it.finished:
+				if	it[0] != self.sd.NODATA_value and\
+					it.multi_index[0]+1 < self.sd.nx and\
+					it.multi_index[1]+1 < self.sd.ny and\
+					self.sd.altitude[it.multi_index[0]+1,it.multi_index[1]] != self.sd.NODATA_value and\
+					self.sd.altitude[it.multi_index[0],it.multi_index[1]+1] != self.sd.NODATA_value and\
+					self.sd.altitude[it.multi_index[0]+1,it.multi_index[1]+1] != self.sd.NODATA_value:
+						alt_ind[it.multi_index] = alt_ind[it.multi_index[0]+1,it.multi_index[1]] =\
+							alt_ind[it.multi_index[0],it.multi_index[1]+1] = alt_ind[it.multi_index[0]+1,it.multi_index[1]+1] = 1
+				it.iternext()
+		for it in np.nditer(self.sd.altitude, flags=['multi_index'], op_flags=['readonly']):
+			if	it[0] != self.sd.NODATA_value:# and\
+				#it.multi_index[0]+1 < self.ds.nx and\
+				#it.multi_index[1]+1 < self.sd.ny and\
+				#self.sd.altitude[it.multi_index[0]+1,it.multi_index[1]] != self.sd.NODATA_value and\
+				#self.sd.altitude[it.multi_index[0],it.multi_index[1]+1] != self.sd.NODATA_value and\
+				#self.sd.altitude[it.multi_index[0]+1,it.multi_index[1]+1] != self.sd.NODATA_value:
+					alt_ind[it.multi_index] = alt_ind[it.multi_index[0]+1,it.multi_index[1]] =\
+						alt_ind[it.multi_index[0],it.multi_index[1]+1] = alt_ind[it.multi_index[0]+1,it.multi_index[1]+1] = 1
+		n_vertices = 0
+		for it in np.nditer(alt_ind, op_flags=['readwrite']):
+			if it[0] == 0:
+				it[0] = -1
+			else:
+				it[0] = n_vertices
+				n_vertices += 1
+		for it in np.nditer(alt_ind, flags=['multi_index'], op_flags=['readonly']):
+			if it[0]:
+				file_obj.write('v\t%f\t%f\t%f\nv\t%f\t%f\t%f' % (self.sd.dx * it.multi_index[0], self.sd.dx * it.multi_index[1],\
+					self.sd.altitude[it.multi_index] - self.alt_min + 10, self.sd.dx * it.multi_index[0], self.sd.dx * it.multi_index[1],\
+					self.alt_max - self.alt_min + 10 + self.hight))
+		for it in np.nditer(alt_ind, flags=['multi_index'], op_flags=['readonly']):
+			if	it[0] > -1 and\
+				it.multi_index[0]+1 < self.ds.nx and\
+				it.multi_index[1]+1 < self.sd.ny and\
+				alt_ind[it.multi_index[0]+1,it.multi_index[1]] != -1 and\
+				alt_ind[it.multi_index[0],it.multi_index[1]+1] != -1 and\
+				alt_ind[it.multi_index[0]+1,it.multi_index[1]+1] != -1:
+					file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2,\
+						alt_ind[it.multi_index[0],it.multi_index[1]+1]*2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2,\
+						alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2))
+					file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+						alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+						alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1))
+					if	it.multi_index[1]-1 < 0 or\
+						alt_ind[it.multi_index[0],it.multi_index[1]-1] == -1 or\
+						alt_ind[it.multi_index[0]+1,it.multi_index[1]-1] == -1:
+							file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2, it[0]*2+1,\
+								alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1, it[0]*2+1))
+					if	it.multi_index[0]-1 < 0 or\
+						alt_ind[it.multi_index[0]-1,it.multi_index[1]] == -1 or\
+						alt_ind[it.multi_index[0]-1,it.multi_index[1]+1] == -1:
+							file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2, it[0]*2+1,\
+								alt_ind[it.multi_index[0],it.multi_index[1]+1]*2, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1, it[0]*2+1))
+					if	it.multi_index[1]+2 >= self.ny or\
+						alt_ind[it.multi_index[0],it.multi_index[1]+2] == -1 or\
+						alt_ind[it.multi_index[0]+1,it.multi_index[1]+2] == -1:
+							file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0],it.multi_index[1]+1]*2,\
+								alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1,\
+								alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2, alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1,\
+								alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1))
+					if	it.multi_index[0]+2 >= self.nx or\
+						alt_ind[it.multi_index[0]+2,it.multi_index[1]] == -1 or\
+						alt_ind[it.multi_index[0]+2,it.multi_index[1]+1] == -1:
+							file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2,\
+								alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+								alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2, alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1,\
+								alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1))
+		file_obj.close()
+		print("OBJ file is ready")
+
 def main():
 	map_name, region_map_name = readFileNames()
 	slope = asc(map_name, region_map_name)
@@ -558,10 +634,11 @@ def main():
 	slope.checkPair()
 	slope.interpolateMap()
 	f = files(slope,15)
-	f.createBlockMeshDict()
-	f.polyMesh()
-	f.createSetFieldsDict()
-	f.createAlphaWater()
+	#f.createBlockMeshDict()
+	#f.polyMesh()
+	#f.createSetFieldsDict()
+	#f.createAlphaWater()
+	f.createOBJ()
   
 if __name__== "__main__":
 	main()
