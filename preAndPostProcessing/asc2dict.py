@@ -66,11 +66,11 @@ class asc:
 		self.NODATA_value = float(line_list[1].replace(",", "."))
 
 		print("Write new cell size if necessary:")
-        self.new_cellsize = input()
-        if self.new_cellsize == "":
-            self.new_cellsize = self.cellsize
-        else:
-            self.new_cellsize = float(self.new_cellsize)
+		self.new_cellsize = input()
+		if self.new_cellsize == "":
+			self.new_cellsize = self.cellsize
+		else:
+			self.new_cellsize = float(self.new_cellsize)
 
 		self.altitude = np.loadtxt(file_map, dtype=np.str)
 		file_map.close()
@@ -178,7 +178,7 @@ class files:
 						self.blocks[it.multi_index[0], it.multi_index[1], z] = 1
 					self.blocks[it.multi_index[0], it.multi_index[1], int((it[0] - self.alt_min) / self.sd.dx)] = 2
 				it.iternext()
-		ind = 0;
+		ind = 0
 		for it in np.nditer(self.vertices, op_flags=['readwrite']):
 			if it == 1:
 				it[...] = ind
@@ -636,6 +636,6 @@ def main():
 	#f.createSetFieldsDict()
 	#f.createAlphaWater()
 	f.createOBJ()
-  
+
 if __name__== "__main__":
 	main()
