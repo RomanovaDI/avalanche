@@ -427,9 +427,9 @@ class files:
 		file_faces_atm.close()
 		filenames = [facesIntFileName, facesSlFileName, facesAtmFileName]
 		for fname in filenames:
-		    with open(fname) as infile:
-		        for line in infile:
-		            file_faces.write(line)
+			with open(fname) as infile:
+				for line in infile:
+					file_faces.write(line)
 		file_faces.write(")\n")
 
 		file_neighbour.write("FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tlabelList;\n")
@@ -585,6 +585,41 @@ class files:
 						self.sd.altitude[it.multi_index] - self.alt_min + 1, self.sd.dx * it.multi_index[0], self.sd.dx * it.multi_index[1],\
 						self.sd.altitude[it.multi_index] - self.alt_min + self.hight - 1))
 				it.iternext()
+		#with np.nditer(alt_ind, flags=['multi_index'], op_flags=['readonly']) as it:
+		#	while not it.finished:
+		#		if	it[0] > -1 and\
+		#			it.multi_index[0]+1 < self.sd.nx and\
+		#			it.multi_index[1]+1 < self.sd.ny and\
+		#			alt_ind[it.multi_index[0]+1,it.multi_index[1]] != -1 and\
+		#			alt_ind[it.multi_index[0],it.multi_index[1]+1] != -1 and\
+		#			alt_ind[it.multi_index[0]+1,it.multi_index[1]+1] != -1:
+		#				file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+		#					alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1))
+		#				file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2,\
+		#					alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+2, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2))
+		#				if	it.multi_index[1]-1 < 0 or\
+		#					alt_ind[it.multi_index[0],it.multi_index[1]-1] == -1 or\
+		#					alt_ind[it.multi_index[0]+1,it.multi_index[1]-1] == -1:
+		#						file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+		#							alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2, it[0]*2+2))
+		#				if	it.multi_index[0]-1 < 0 or\
+		#					alt_ind[it.multi_index[0]-1,it.multi_index[1]] == -1 or\
+		#					alt_ind[it.multi_index[0]-1,it.multi_index[1]+1] == -1:
+		#						file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1,\
+		#							alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2, it[0]*2+2))
+		#				if	it.multi_index[1]+2 >= self.sd.ny or\
+		#					alt_ind[it.multi_index[0],it.multi_index[1]+2] == -1 or\
+		#					alt_ind[it.multi_index[0]+1,it.multi_index[1]+2] == -1:
+		#						file_obj.write('f\t%d\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1,\
+		#							alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+2,\
+		#							alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2))
+		#				if	it.multi_index[0]+2 >= self.sd.nx or\
+		#					alt_ind[it.multi_index[0]+2,it.multi_index[1]] == -1 or\
+		#					alt_ind[it.multi_index[0]+2,it.multi_index[1]+1] == -1:
+		#						file_obj.write('f\t%d\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+		#							alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+2,\
+		#							alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2))
+		#		it.iternext()
 		with np.nditer(alt_ind, flags=['multi_index'], op_flags=['readonly']) as it:
 			while not it.finished:
 				if	it[0] > -1 and\
@@ -593,30 +628,34 @@ class files:
 					alt_ind[it.multi_index[0]+1,it.multi_index[1]] != -1 and\
 					alt_ind[it.multi_index[0],it.multi_index[1]+1] != -1 and\
 					alt_ind[it.multi_index[0]+1,it.multi_index[1]+1] != -1:
-						file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+						file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+							alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
 							alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1))
-						file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2,\
+						file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2+2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2,\
+							alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2,\
 							alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+2, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2))
 						if	it.multi_index[1]-1 < 0 or\
 							alt_ind[it.multi_index[0],it.multi_index[1]-1] == -1 or\
 							alt_ind[it.multi_index[0]+1,it.multi_index[1]-1] == -1:
-								file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
-									alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2, it[0]*2+2))
+								file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1, it[0]*2+2,\
+									alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2, it[0]*2+2))
 						if	it.multi_index[0]-1 < 0 or\
 							alt_ind[it.multi_index[0]-1,it.multi_index[1]] == -1 or\
 							alt_ind[it.multi_index[0]-1,it.multi_index[1]+1] == -1:
-								file_obj.write('f\t%d\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1,\
-									alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2, it[0]*2+2))
+								file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (it[0]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1, it[0]*2+2,\
+									alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2, it[0]*2+2))
 						if	it.multi_index[1]+2 >= self.sd.ny or\
 							alt_ind[it.multi_index[0],it.multi_index[1]+2] == -1 or\
 							alt_ind[it.multi_index[0]+1,it.multi_index[1]+2] == -1:
-								file_obj.write('f\t%d\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1,\
+								file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+1,\
+									alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2,\
 									alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+2,\
 									alt_ind[it.multi_index[0],it.multi_index[1]+1]*2+2))
 						if	it.multi_index[0]+2 >= self.sd.nx or\
 							alt_ind[it.multi_index[0]+2,it.multi_index[1]] == -1 or\
 							alt_ind[it.multi_index[0]+2,it.multi_index[1]+1] == -1:
-								file_obj.write('f\t%d\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+								file_obj.write('f\t%d\t%d\t%d\nf\t%d\t%d\t%d\n' % (alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+1,\
+									alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2,\
 									alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+1, alt_ind[it.multi_index[0]+1,it.multi_index[1]+1]*2+2,\
 									alt_ind[it.multi_index[0]+1,it.multi_index[1]]*2+2))
 				it.iternext()
