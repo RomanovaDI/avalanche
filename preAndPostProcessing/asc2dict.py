@@ -151,11 +151,15 @@ class asc:
 		self.altitude = altitude_interpolation
 
 class files:
-	def __init__(self, slopeData, hight=4.0):
+	def __init__(self, slopeData):
 		self.sd = slopeData
-		self.prepareSlopeData(hight)
+		self.prepareSlopeDataFlag = 0
+		self.prepareSlopeDataGradFlag = 0
 
-	def prepareSlopeData(self, hight=4.0):
+	def prepareSlopeData(self, hight=15.0):
+		if self.prepareSlopeDataFlag == 1
+			return
+		self.prepareSlopeDataFlag = 1
 		self.hight = hight
 		f = lambda a: math.floor(a / self.sd.dx) * self.sd.dx if a != 0 else self.sd.NODATA_value
 		fv = np.vectorize(f)
@@ -192,7 +196,8 @@ class files:
 		self.n_blocks = ind
 		self.n_vertices = (self.vertices != -1).sum()
 
-	def createBlockMeshDict(self):
+	def createBlockMeshDict(self, hight=15.0):
+		self.prepareSlopeData(hight)
 		print("Creating blockMeshDict file")
 		blockMeshDictFileName = "blockMeshDict"
 		file_blockMeshDict = open(blockMeshDictFileName, "w")
@@ -280,7 +285,91 @@ class files:
 		file_blockMeshDict.close()
 		print("blockMeshDict file is ready")
 
-	def polyMesh(self):
+	def createBlockMeshDictInclined(self, hight=15.):
+		print("Creating blockMeshDict file")
+		blockMeshDictFileName = "blockMeshDict"
+		file_blockMeshDict = open(blockMeshDictFileName, "w")
+		file_blockMeshDict.write("FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tobject\tblockMeshDict;\n}\n\nconvertToMeters 1.0;\n\n")
+		file_blockMeshDict.write("vertices\n(\n")
+		tmp = self.sd.dx
+		while tmp < hight:
+			tmp *= 2
+		self.hight = tmp
+		nz = math.log(self.hight / self.sd.dx, 2) + 1
+		hights = np.full(nz, self.sd.dx)
+		hights[0] = 0
+		for i in ragne(1, nz):
+			hights[i] *= pow(2,i-1)
+		ind = np.copy(self.sd.altitude)
+		tmp = 0
+		with np.nditer(ind, flags=['multi_index'], op_flags=["readwrite"]) as it:
+			while not it.finished:
+				if it[0] != -1:
+					it[0] = tmp
+					tmp += 1
+				it.iternext()
+		with np.nditer(self.sd.altitude, flags=['multi_index'], op_flags=["readonly"]) as it:
+			while not it.finished:
+				if it[0] != -1:
+					for z in hights:
+						file_blockMeshDict.write("\t(%f\t%f\t%f)\n" %\
+							(it.multi_index[0] * self.sd.dx, it.multi_index[1] * self.sd.dx, it[0] + z))
+				it.iternext()
+		file_blockMeshDict.write(");\n\nblocks\n(\n")
+		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
+			while not it.finished:
+				if it[0] != -1:
+					vert0 = it.multi_index
+					vert1 = tuple(map(add, it.multi_index, (1, 0)))
+					vert2 = tuple(map(add, it.multi_index, (1, 1)))
+					vert3 = tuple(map(add, it.multi_index, (0, 1)))
+					for z in range(nz-1):
+						file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 1) simpleGrading (1 1 1)\n" % \
+							(nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert3]+z,\
+							nz*ind[vert0]+z+1, nz*ind[vert1]+z+1, nz*ind[vert2]+z+1, nz*ind[vert3]+z+1))
+				it.iternext()
+		file_blockMeshDict.write(");\n\nedges\n(\n);\n\nboundary\n(\n\tslope\n\t{\n\t\ttype wall;\n\t\tfaces\n\t\t(\n")
+		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
+			while not it.finished:
+				if it[0] != -1:
+					vert0 = it.multi_index
+					vert1 = tuple(map(add, it.multi_index, (1, 0)))
+					vert2 = tuple(map(add, it.multi_index, (1, 1)))
+					vert3 = tuple(map(add, it.multi_index, (0, 1)))
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3], nz*ind[vert2], nz*ind[vert1], nz*ind[vert0]))
+				it.iternext()
+		file_blockMeshDict.write("\t\t);\n\t}\n\tatmosphere\n\t{\n\t\ttype patch;\n\t\tfaces\n\t\t(\n")
+		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
+			while not it.finished:
+				if it[0] != -1:
+					vert0 = it.multi_index
+					vert1 = tuple(map(add, it.multi_index, (1, 0)))
+					vert2 = tuple(map(add, it.multi_index, (1, 1)))
+					vert3 = tuple(map(add, it.multi_index, (0, 1)))
+					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+nz-1, nz*ind[vert1]+nz-1, nz*ind[vert2]+nz-1, nz*ind[vert3]+nz-1))
+					neighbour_ind = tuple(map(add, it.multi_index, (-1, 0)))
+					if neighbour_ind[0] < 0 or ind[neighbour_ind] == -1:
+						for z in range(nz-1):
+							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3]+z, nz*ind[vert0]+z, nz*ind[vert0]+z+1, nz*ind[vert3]+z+1))
+					neighbour_ind = tuple(map(add, it.multi_index, (1, 0)))
+					if neighbour_ind[0] >= self.sd.nx or ind[neighbour_ind] == -1:
+						for z in range(nz-1):
+							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert2]+z+1, nz*ind[vert1]+z+1))
+					neighbour_ind = tuple(map(add, it.multi_index, (0, -1)))
+					if neighbour_ind[1] < 0 or ind[neighbour_ind] == -1:
+						for z in range(nz-1):
+							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert1]+z+1, nz*ind[vert0]+z+1))
+					neighbour_ind = tuple(map(add, it.multi_index, (0, 1)))
+					if neighbour_ind[1] >= self.sd.ny or ind[neighbour_ind] == -1:
+						for z in range(nz-1):
+							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert2]+z, nz*ind[vert3]+z, nz*ind[vert3]+z+1, nz*ind[vert2]+z+1))
+				it.iternext()
+		file_blockMeshDict.write("\t\t);\n\t}\n);\n\nmergePatchPairs\n(\n);\n")
+		file_blockMeshDict.close()
+		print("blockMeshDict file is ready")
+
+	def polyMesh(self, hight=15.):
+		self.prepareSlopeData(hight)
 		boundaryFileName = "boundary"
 		file_boundary = open(boundaryFileName, "w")
 		facesFileName = "faces"
@@ -666,11 +755,12 @@ def main():
 	map_name, region_map_name = readFileNames()
 	slope = asc(map_name, region_map_name)
 	f = files(slope,15)
-	f.createBlockMeshDict()
+	#f.createBlockMeshDict()
+	f.createBlockMeshDictInclined()
 	#f.polyMesh()
 	#f.createSetFieldsDict()
 	#f.createAlphaWater()
-	f.createOBJ()
+	#f.createOBJ()
 
 if __name__== "__main__":
 	main()
