@@ -151,34 +151,34 @@ class asc:
 		self.altitude = altitude_interpolation
 
 class files:
-	def __init__(self, slopeData):
+	def __init__(self, slopeData, height=16.):
 		self.sd = slopeData
+		self.height = height
 		self.prepareSlopeDataFlag = 0
 		self.prepareSlopeDataGradFlag = 0
 
-	def prepareSlopeData(self, hight=15.0):
-		if self.prepareSlopeDataFlag == 1
+	def prepareSlopeData(self):
+		if self.prepareSlopeDataFlag == 1:
 			return
 		self.prepareSlopeDataFlag = 1
-		self.hight = hight
 		f = lambda a: math.floor(a / self.sd.dx) * self.sd.dx if a != 0 else self.sd.NODATA_value
 		fv = np.vectorize(f)
 		self.sd.altitude = fv(self.sd.altitude)
 		self.alt_max = np.amax(self.sd.altitude)
 		self.alt_min = np.amin(self.sd.altitude[self.sd.altitude != self.sd.NODATA_value])
-		self.hight = math.floor(hight / self.sd.dx) * self.sd.dx
-		self.sd.nz = int((self.alt_max - self.alt_min + self.hight) / self.sd.dx)
+		self.height = math.floor(self.height / self.sd.dx) * self.sd.dx
+		self.sd.nz = int((self.alt_max - self.alt_min + self.height) / self.sd.dx)
 		self.vertices = np.full((self.sd.nx + 1, self.sd.ny + 1, self.sd.nz + 1), -1, dtype=np.int32)
 		self.blocks = np.zeros((self.sd.nx, self.sd.ny, self.sd.nz), dtype=np.float32)
 		with np.nditer(self.sd.altitude, flags=['multi_index'], op_flags=['readonly']) as it:
 			while not it.finished:
 				if it[0] != self.sd.NODATA_value:
-					for z in range(int((it[0] - self.alt_min) / self.sd.dx), int((it[0] - self.alt_min + self.hight) / self.sd.dx) + 1):
+					for z in range(int((it[0] - self.alt_min) / self.sd.dx), int((it[0] - self.alt_min + self.height) / self.sd.dx) + 1):
 						self.vertices[it.multi_index[0], it.multi_index[1], z] = 1
 						self.vertices[it.multi_index[0] + 1, it.multi_index[1], z] = 1
 						self.vertices[it.multi_index[0], it.multi_index[1] + 1, z] = 1
 						self.vertices[it.multi_index[0] + 1, it.multi_index[1] + 1, z] = 1
-					for z in range(int((it[0] - self.alt_min) / self.sd.dx), int((it[0] - self.alt_min + self.hight) / self.sd.dx)):
+					for z in range(int((it[0] - self.alt_min) / self.sd.dx), int((it[0] - self.alt_min + self.height) / self.sd.dx)):
 						self.blocks[it.multi_index[0], it.multi_index[1], z] = 1
 					self.blocks[it.multi_index[0], it.multi_index[1], int((it[0] - self.alt_min) / self.sd.dx)] = 2
 				it.iternext()
@@ -196,8 +196,8 @@ class files:
 		self.n_blocks = ind
 		self.n_vertices = (self.vertices != -1).sum()
 
-	def createBlockMeshDict(self, hight=15.0):
-		self.prepareSlopeData(hight)
+	def createBlockMeshDict(self):
+		self.prepareSlopeData()
 		print("Creating blockMeshDict file")
 		blockMeshDictFileName = "blockMeshDict"
 		file_blockMeshDict = open(blockMeshDictFileName, "w")
@@ -285,21 +285,21 @@ class files:
 		file_blockMeshDict.close()
 		print("blockMeshDict file is ready")
 
-	def createBlockMeshDictInclined(self, hight=15.):
+	def createBlockMeshDictInclined(self):
 		print("Creating blockMeshDict file")
 		blockMeshDictFileName = "blockMeshDict"
 		file_blockMeshDict = open(blockMeshDictFileName, "w")
 		file_blockMeshDict.write("FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tobject\tblockMeshDict;\n}\n\nconvertToMeters 1.0;\n\n")
 		file_blockMeshDict.write("vertices\n(\n")
 		tmp = self.sd.dx
-		while tmp < hight:
+		while tmp < self.height:
 			tmp *= 2
-		self.hight = tmp
-		nz = math.log(self.hight / self.sd.dx, 2) + 1
-		hights = np.full(nz, self.sd.dx)
-		hights[0] = 0
-		for i in ragne(1, nz):
-			hights[i] *= pow(2,i-1)
+		self.height = tmp
+		nz = int(math.log(self.height / self.sd.dx, 2)) + 1
+		heights = np.full(nz, self.sd.dx)
+		heights[0] = 0
+		for i in range(1, nz):
+			heights[i] *= pow(2,i-1)
 		ind = np.copy(self.sd.altitude)
 		tmp = 0
 		with np.nditer(ind, flags=['multi_index'], op_flags=["readwrite"]) as it:
@@ -311,7 +311,7 @@ class files:
 		with np.nditer(self.sd.altitude, flags=['multi_index'], op_flags=["readonly"]) as it:
 			while not it.finished:
 				if it[0] != -1:
-					for z in hights:
+					for z in heights:
 						file_blockMeshDict.write("\t(%f\t%f\t%f)\n" %\
 							(it.multi_index[0] * self.sd.dx, it.multi_index[1] * self.sd.dx, it[0] + z))
 				it.iternext()
@@ -323,10 +323,12 @@ class files:
 					vert1 = tuple(map(add, it.multi_index, (1, 0)))
 					vert2 = tuple(map(add, it.multi_index, (1, 1)))
 					vert3 = tuple(map(add, it.multi_index, (0, 1)))
-					for z in range(nz-1):
-						file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 1) simpleGrading (1 1 1)\n" % \
-							(nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert3]+z,\
-							nz*ind[vert0]+z+1, nz*ind[vert1]+z+1, nz*ind[vert2]+z+1, nz*ind[vert3]+z+1))
+					if	vert1[0] < self.sd.nx and vert3[1] < self.sd.ny and\
+						ind[vert1] != -1 and ind[vert2] != -1 and ind[vert3] != -1:
+							for z in range(nz-1):
+								file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 1) simpleGrading (1 1 1)\n" % \
+									(nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert3]+z,\
+									nz*ind[vert0]+z+1, nz*ind[vert1]+z+1, nz*ind[vert2]+z+1, nz*ind[vert3]+z+1))
 				it.iternext()
 		file_blockMeshDict.write(");\n\nedges\n(\n);\n\nboundary\n(\n\tslope\n\t{\n\t\ttype wall;\n\t\tfaces\n\t\t(\n")
 		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
@@ -336,7 +338,9 @@ class files:
 					vert1 = tuple(map(add, it.multi_index, (1, 0)))
 					vert2 = tuple(map(add, it.multi_index, (1, 1)))
 					vert3 = tuple(map(add, it.multi_index, (0, 1)))
-					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3], nz*ind[vert2], nz*ind[vert1], nz*ind[vert0]))
+					if	vert1[0] < self.sd.nx and vert3[1] < self.sd.ny and\
+						ind[vert1] != -1 and ind[vert2] != -1 and ind[vert3] != -1:
+							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3], nz*ind[vert2], nz*ind[vert1], nz*ind[vert0]))
 				it.iternext()
 		file_blockMeshDict.write("\t\t);\n\t}\n\tatmosphere\n\t{\n\t\ttype patch;\n\t\tfaces\n\t\t(\n")
 		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
@@ -346,30 +350,32 @@ class files:
 					vert1 = tuple(map(add, it.multi_index, (1, 0)))
 					vert2 = tuple(map(add, it.multi_index, (1, 1)))
 					vert3 = tuple(map(add, it.multi_index, (0, 1)))
-					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+nz-1, nz*ind[vert1]+nz-1, nz*ind[vert2]+nz-1, nz*ind[vert3]+nz-1))
-					neighbour_ind = tuple(map(add, it.multi_index, (-1, 0)))
-					if neighbour_ind[0] < 0 or ind[neighbour_ind] == -1:
-						for z in range(nz-1):
-							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3]+z, nz*ind[vert0]+z, nz*ind[vert0]+z+1, nz*ind[vert3]+z+1))
-					neighbour_ind = tuple(map(add, it.multi_index, (1, 0)))
-					if neighbour_ind[0] >= self.sd.nx or ind[neighbour_ind] == -1:
-						for z in range(nz-1):
-							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert2]+z+1, nz*ind[vert1]+z+1))
-					neighbour_ind = tuple(map(add, it.multi_index, (0, -1)))
-					if neighbour_ind[1] < 0 or ind[neighbour_ind] == -1:
-						for z in range(nz-1):
-							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert1]+z+1, nz*ind[vert0]+z+1))
-					neighbour_ind = tuple(map(add, it.multi_index, (0, 1)))
-					if neighbour_ind[1] >= self.sd.ny or ind[neighbour_ind] == -1:
-						for z in range(nz-1):
-							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert2]+z, nz*ind[vert3]+z, nz*ind[vert3]+z+1, nz*ind[vert2]+z+1))
+					if	vert1[0] < self.sd.nx and vert3[1] < self.sd.ny and\
+						ind[vert1] != -1 and ind[vert2] != -1 and ind[vert3] != -1:
+							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+nz-1, nz*ind[vert1]+nz-1, nz*ind[vert2]+nz-1, nz*ind[vert3]+nz-1))
+							neighbour_ind = tuple(map(add, it.multi_index, (-1, 0)))
+							if neighbour_ind[0] < 0 or ind[neighbour_ind] == -1:
+								for z in range(nz-1):
+									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3]+z, nz*ind[vert0]+z, nz*ind[vert0]+z+1, nz*ind[vert3]+z+1))
+							neighbour_ind = tuple(map(add, it.multi_index, (1, 0)))
+							if neighbour_ind[0] >= self.sd.nx or ind[neighbour_ind] == -1:
+								for z in range(nz-1):
+									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert2]+z+1, nz*ind[vert1]+z+1))
+							neighbour_ind = tuple(map(add, it.multi_index, (0, -1)))
+							if neighbour_ind[1] < 0 or ind[neighbour_ind] == -1:
+								for z in range(nz-1):
+									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert1]+z+1, nz*ind[vert0]+z+1))
+							neighbour_ind = tuple(map(add, it.multi_index, (0, 1)))
+							if neighbour_ind[1] >= self.sd.ny or ind[neighbour_ind] == -1:
+								for z in range(nz-1):
+									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert2]+z, nz*ind[vert3]+z, nz*ind[vert3]+z+1, nz*ind[vert2]+z+1))
 				it.iternext()
 		file_blockMeshDict.write("\t\t);\n\t}\n);\n\nmergePatchPairs\n(\n);\n")
 		file_blockMeshDict.close()
 		print("blockMeshDict file is ready")
 
-	def polyMesh(self, hight=15.):
-		self.prepareSlopeData(hight)
+	def polyMesh(self):
+		self.prepareSlopeData()
 		boundaryFileName = "boundary"
 		file_boundary = open(boundaryFileName, "w")
 		facesFileName = "faces"
@@ -554,9 +560,9 @@ class files:
 		file_points.close()
 		file_cellToRegion.close()
 
-	def createSetFieldsDict(self, hight_of_snow=2.0, jump=1.0):
+	def createSetFieldsDict(self, height_of_snow=2.0, jump=1.0):
 		print("Creating setFieldsDict file")
-		hight_of_snow += jump
+		height_of_snow += jump
 		x_offset = int((self.sd.region_xllcorner - self.sd.xllcorner) / self.sd.dx)
 		y_offset = int((self.sd.region_yllcorner - self.sd.yllcorner) / self.sd.dx)
 		f = lambda a: 0 if a == self.sd.region_NODATA_value else (1 if a == 1 else -1)
@@ -581,12 +587,12 @@ class files:
 					and region[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] != 0:
 						if region[it.multi_index[0] - x_offset, it.multi_index[1] - y_offset] == -1:
 							z_slope = int((it[0] - self.alt_min) / self.sd.dx)
-							for z in range(int((it[0] - self.alt_min) / self.sd.dx), int(math.ceil((it[0] - self.alt_min + hight_of_snow) / self.sd.dx))):
-								self.blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if (z - z_slope + 1) * self.sd.dx <= hight_of_snow else ((z - z_slope + 1) * self.sd.dx - hight_of_snow) / self.sd.dx
+							for z in range(int((it[0] - self.alt_min) / self.sd.dx), int(math.ceil((it[0] - self.alt_min + height_of_snow) / self.sd.dx))):
+								self.blocks[it.multi_index[0], it.multi_index[1], z] = 1.0 if (z - z_slope + 1) * self.sd.dx <= height_of_snow else ((z - z_slope + 1) * self.sd.dx - height_of_snow) / self.sd.dx
 								if (z- z_slope + 1) * self.sd.dx <= jump:
 									self.blocks[it.multi_index[0], it.multi_index[1], z] = 0.0
 						else:
-							for z in range(int((it[0] - self.alt_min) / self.sd.dx), int((it[0] - self.alt_min + self.hight) / self.sd.dx)):
+							for z in range(int((it[0] - self.alt_min) / self.sd.dx), int((it[0] - self.alt_min + self.height) / self.sd.dx)):
 								self.blocks[it.multi_index[0], it.multi_index[1], z] = -1.0
 				it.iternext()
 		setFieldsDictFileName = "setFieldsDict"
@@ -672,7 +678,7 @@ class files:
 				if it[0] > -1:
 					file_obj.write('v\t%f\t%f\t%f\nv\t%f\t%f\t%f\n' % (self.sd.dx * it.multi_index[0], self.sd.dx * it.multi_index[1],\
 						self.sd.altitude[it.multi_index] - self.alt_min + 1, self.sd.dx * it.multi_index[0], self.sd.dx * it.multi_index[1],\
-						self.sd.altitude[it.multi_index] - self.alt_min + self.hight - 1))
+						self.sd.altitude[it.multi_index] - self.alt_min + self.height - 1))
 				it.iternext()
 		#with np.nditer(alt_ind, flags=['multi_index'], op_flags=['readonly']) as it:
 		#	while not it.finished:
