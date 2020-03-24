@@ -144,6 +144,9 @@ class asc:
 		fv = np.vectorize(f)
 		altitude_interpolation_mask = fv(altitude_interpolation_mask)
 		altitude_interpolation = altitude_interpolation * altitude_interpolation_mask
+		f = lambda a: self.NODATA_value if a == 0 else a
+		fv = np.vectorize(f)
+		altitude_interpolation = fv(altitude_interpolation)
 		self.ny = xnew.shape[0]
 		self.nx = ynew.shape[0]
 		self.nz = 1
@@ -289,7 +292,13 @@ class files:
 		print("Creating blockMeshDict file")
 		blockMeshDictFileName = "blockMeshDict"
 		file_blockMeshDict = open(blockMeshDictFileName, "w")
-		file_blockMeshDict.write("FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tobject\tblockMeshDict;\n}\n\nconvertToMeters 1.0;\n\n")
+		blocksFileName = "blocks"
+		file_blocks = open(blocksFileName, "w")
+		boundariesSlopeFileName = "boundarySlope"
+		file_boundaries_slope = open(boundariesSlopeFileName, "w")
+		boundariesAtmosphereFileName = "boundaryAtmosphere"
+		file_boundaries_atmosphere = open(boundariesAtmosphereFileName, "w")
+		file_blockMeshDict.write("FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tobject\tblockMeshDict;\n}\n\nscale 1.0;\n\n")
 		file_blockMeshDict.write("vertices\n(\n")
 		tmp = self.sd.dx
 		while tmp < self.height:
@@ -304,18 +313,20 @@ class files:
 		tmp = 0
 		with np.nditer(ind, flags=['multi_index'], op_flags=["readwrite"]) as it:
 			while not it.finished:
-				if it[0] != -1:
+				if it[0] != self.sd.NODATA_value:
 					it[0] = tmp
 					tmp += 1
+				else:
+					it[0] = -1
 				it.iternext()
 		with np.nditer(self.sd.altitude, flags=['multi_index'], op_flags=["readonly"]) as it:
 			while not it.finished:
-				if it[0] != -1:
+				if it[0] != self.sd.NODATA_value:
 					for z in heights:
 						file_blockMeshDict.write("\t(%f\t%f\t%f)\n" %\
 							(it.multi_index[0] * self.sd.dx, it.multi_index[1] * self.sd.dx, it[0] + z))
 				it.iternext()
-		file_blockMeshDict.write(");\n\nblocks\n(\n")
+		file_blocks.write(");\n\nblocks\n(\n")
 		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
 			while not it.finished:
 				if it[0] != -1:
@@ -326,51 +337,47 @@ class files:
 					if	vert1[0] < self.sd.nx and vert3[1] < self.sd.ny and\
 						ind[vert1] != -1 and ind[vert2] != -1 and ind[vert3] != -1:
 							for z in range(nz-1):
-								file_blockMeshDict.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 1) simpleGrading (1 1 1)\n" % \
+								file_blocks.write("\thex (%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d)\t(1 1 1) simpleGrading (1 1 1)\n" % \
 									(nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert3]+z,\
 									nz*ind[vert0]+z+1, nz*ind[vert1]+z+1, nz*ind[vert2]+z+1, nz*ind[vert3]+z+1))
-				it.iternext()
-		file_blockMeshDict.write(");\n\nedges\n(\n);\n\nboundary\n(\n\tslope\n\t{\n\t\ttype wall;\n\t\tfaces\n\t\t(\n")
-		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
-			while not it.finished:
-				if it[0] != -1:
-					vert0 = it.multi_index
-					vert1 = tuple(map(add, it.multi_index, (1, 0)))
-					vert2 = tuple(map(add, it.multi_index, (1, 1)))
-					vert3 = tuple(map(add, it.multi_index, (0, 1)))
 					if	vert1[0] < self.sd.nx and vert3[1] < self.sd.ny and\
 						ind[vert1] != -1 and ind[vert2] != -1 and ind[vert3] != -1:
-							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3], nz*ind[vert2], nz*ind[vert1], nz*ind[vert0]))
-				it.iternext()
-		file_blockMeshDict.write("\t\t);\n\t}\n\tatmosphere\n\t{\n\t\ttype patch;\n\t\tfaces\n\t\t(\n")
-		with np.nditer(ind, flags=['multi_index'], op_flags=["readonly"]) as it:
-			while not it.finished:
-				if it[0] != -1:
-					vert0 = it.multi_index
-					vert1 = tuple(map(add, it.multi_index, (1, 0)))
-					vert2 = tuple(map(add, it.multi_index, (1, 1)))
-					vert3 = tuple(map(add, it.multi_index, (0, 1)))
+							file_boundaries_slope.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3], nz*ind[vert2], nz*ind[vert1], nz*ind[vert0]))
 					if	vert1[0] < self.sd.nx and vert3[1] < self.sd.ny and\
 						ind[vert1] != -1 and ind[vert2] != -1 and ind[vert3] != -1:
-							file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+nz-1, nz*ind[vert1]+nz-1, nz*ind[vert2]+nz-1, nz*ind[vert3]+nz-1))
-							neighbour_ind = tuple(map(add, it.multi_index, (-1, 0)))
-							if neighbour_ind[0] < 0 or ind[neighbour_ind] == -1:
+							file_boundaries_atmosphere.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+nz-1, nz*ind[vert1]+nz-1, nz*ind[vert2]+nz-1, nz*ind[vert3]+nz-1))
+							neighbour_ind1 = tuple(map(add, it.multi_index, (-1, 0)))
+							neighbour_ind2 = tuple(map(add, it.multi_index, (-1, 1)))
+							if neighbour_ind1[0] < 0 or ind[neighbour_ind1] == -1 or neighbour_ind2[0] < 0 or ind[neighbour_ind2] == -1:
 								for z in range(nz-1):
-									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3]+z, nz*ind[vert0]+z, nz*ind[vert0]+z+1, nz*ind[vert3]+z+1))
-							neighbour_ind = tuple(map(add, it.multi_index, (1, 0)))
-							if neighbour_ind[0] >= self.sd.nx or ind[neighbour_ind] == -1:
+									file_boundaries_atmosphere.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert3]+z, nz*ind[vert0]+z, nz*ind[vert0]+z+1, nz*ind[vert3]+z+1))
+							neighbour_ind1 = tuple(map(add, it.multi_index, (2, 0)))
+							neighbour_ind2 = tuple(map(add, it.multi_index, (2, 1)))
+							if neighbour_ind1[0] >= self.sd.nx or ind[neighbour_ind1] == -1 or neighbour_ind2[0] >= self.sd.nx or ind[neighbour_ind2] == -1:
 								for z in range(nz-1):
-									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert2]+z+1, nz*ind[vert1]+z+1))
-							neighbour_ind = tuple(map(add, it.multi_index, (0, -1)))
-							if neighbour_ind[1] < 0 or ind[neighbour_ind] == -1:
+									file_boundaries_atmosphere.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert1]+z, nz*ind[vert2]+z, nz*ind[vert2]+z+1, nz*ind[vert1]+z+1))
+							neighbour_ind1 = tuple(map(add, it.multi_index, (0, -1)))
+							neighbour_ind2 = tuple(map(add, it.multi_index, (1, -1)))
+							if neighbour_ind1[1] < 0 or ind[neighbour_ind1] == -1 or neighbour_ind2[1] < 0 or ind[neighbour_ind2] == -1:
 								for z in range(nz-1):
-									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert1]+z+1, nz*ind[vert0]+z+1))
-							neighbour_ind = tuple(map(add, it.multi_index, (0, 1)))
-							if neighbour_ind[1] >= self.sd.ny or ind[neighbour_ind] == -1:
+									file_boundaries_atmosphere.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert0]+z, nz*ind[vert1]+z, nz*ind[vert1]+z+1, nz*ind[vert0]+z+1))
+							neighbour_ind1 = tuple(map(add, it.multi_index, (0, 2)))
+							neighbour_ind2 = tuple(map(add, it.multi_index, (1, 2)))
+							if neighbour_ind1[1] >= self.sd.ny or ind[neighbour_ind1] == -1 or neighbour_ind2[1] >= self.sd.ny or ind[neighbour_ind2] == -1:
 								for z in range(nz-1):
-									file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert2]+z, nz*ind[vert3]+z, nz*ind[vert3]+z+1, nz*ind[vert2]+z+1))
+									file_boundaries_atmosphere.write("\t\t\t(%d %d %d %d)\n" % (nz*ind[vert2]+z, nz*ind[vert3]+z, nz*ind[vert3]+z+1, nz*ind[vert2]+z+1))
 				it.iternext()
-		file_blockMeshDict.write("\t\t);\n\t}\n);\n\nmergePatchPairs\n(\n);\n")
+		file_blocks.write(");\n\nedges\n(\n);\n\nboundary\n(\n\tslope\n\t{\n\t\ttype wall;\n\t\tfaces\n\t\t(\n")
+		file_boundaries_slope.write("\t\t);\n\t}\n\tatmosphere\n\t{\n\t\ttype patch;\n\t\tfaces\n\t\t(\n")
+		file_boundaries_atmosphere.write("\t\t);\n\t}\n);\n\nmergePatchPairs\n(\n);\n")
+		file_blocks.close()
+		file_boundaries_slope.close()
+		file_boundaries_atmosphere.close()
+		filenames = [blocksFileName, boundariesSlopeFileName, boundariesAtmosphereFileName]
+		for fname in filenames:
+			with open(fname) as infile:
+				for line in infile:
+					file_blockMeshDict.write(line)
 		file_blockMeshDict.close()
 		print("blockMeshDict file is ready")
 
