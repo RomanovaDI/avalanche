@@ -4,7 +4,7 @@ from operator import add
 import math
 import readAsc as ra
 
-def createOBJ(am, height = 16, height1 = 2, indent = 10): #am - altitude map
+def createOBJ(am, height = 20, height1 = 0.5, indent = 10): #am - altitude map
 	print("Creating OBJ file.")
 	indent = int(math.ceil(indent / am.dx) * am.dx)
 	file_obj = open("slope.obj", "w")
@@ -19,7 +19,7 @@ def createOBJ(am, height = 16, height1 = 2, indent = 10): #am - altitude map
 				am.altitude[it.multi_index[0]+1,it.multi_index[1]+1] != am.NODATA_value and\
 				it.multi_index[1] - it.multi_index[0] * am.ny / am.nx - 0.3 * am.ny < 0 and\
 				it.multi_index[1] - it.multi_index[0] * am.ny / am.nx + 0.4 * am.ny > 0 and\
-				it.multi_index[1] + it.multi_index[0] * am.ny / am.nx - 1.5 * am.ny < 0:
+				it.multi_index[1] + it.multi_index[0] * am.ny / am.nx - 1.5 * am.ny < 0: #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! last 3 lines only for 22 slope
 					alt_ind[it.multi_index] = alt_ind[it.multi_index[0]+1,it.multi_index[1]] =\
 						alt_ind[it.multi_index[0],it.multi_index[1]+1] = alt_ind[it.multi_index[0]+1,it.multi_index[1]+1] = 1
 			it.iternext()
@@ -38,8 +38,8 @@ def createOBJ(am, height = 16, height1 = 2, indent = 10): #am - altitude map
 				file_obj.write('v %f %f %f\n' % (am.dx * it.multi_index[0] + indent, am.dx * it.multi_index[1] + indent,\
 					am.altitude[it.multi_index] - am.alt_min + indent))
 				file_obj.write('v %f %f %f\n' % (am.dx * it.multi_index[0] + indent, am.dx * it.multi_index[1] + indent,\
-					am.alt_max - am.alt_min + height + indent))
-					#am.altitude[it.multi_index] - am.alt_min + height + indent))
+					#am.alt_max - am.alt_min + height + indent))
+					am.altitude[it.multi_index] - am.alt_min + height + indent))
 				if fl == 0:
 					print("Point inside the calculation area: (%f %f %f)" % (am.dx * it.multi_index[0] + indent + 0.1 * am.dx,\
 						am.dx * it.multi_index[1] + indent + 0.1 * am.dx, am.altitude[it.multi_index] - am.alt_min + indent + 0.5 * am.dx))
