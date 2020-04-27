@@ -4,7 +4,7 @@ from operator import add
 import math
 import readAsc as ra
 
-def createOBJ(am, height = 20, height1 = 0.5, indent = 10): #am - altitude map
+def createOBJ(am, height = 20, height1 = 1, indent = 10): #am - altitude map, height1 - altitude of refinement area
 	print("Creating OBJ file.")
 	indent = int(math.ceil(indent / am.dx) * am.dx)
 	file_obj = open("slope.obj", "w")
