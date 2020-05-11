@@ -4,7 +4,7 @@ from operator import add
 import math
 import readAsc as ra
 
-def createSetFields(am, rg, height = 8): #rg - region map, height - height of snow cover
+def createSetFields(am, rg, height = 2): #rg - region map, height - height of snow cover
 	print("Creating setFieldsDict file.")
 	file = open("setFieldsDict", "w")
 	file.write('FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tlocation\t"system";\n\tobject\tsetFieldsDict;\n}')
@@ -24,7 +24,7 @@ def createSetFields(am, rg, height = 8): #rg - region map, height - height of sn
 def main():
 	map_name, region_map_name = ra.readFileNames()
 	slope = ra.asc(map_name, region_map_name)
-	createSetFields(slope.am, slope.rg, 8)
+	createSetFields(slope.am, slope.rg, 2)
 
 if __name__== "__main__":
 	main()
