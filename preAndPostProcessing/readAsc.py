@@ -2,18 +2,43 @@ import numpy as np
 from scipy import interpolate
 from operator import add
 import math
+import sys, getopt
 #import sys
 
-def readFileNames():
-	print("Write a file of ASCII map or type enter and file name will be \"relief_22.asc\"")
-	map_name = input()
-	if map_name == "":
-		map_name = "relief_22.asc"
-	print("Write a file of ASCII region map or type enter and file name will be \"region_22.asc\"")
-	region_map_name = input()
-	if region_map_name == "":
-		region_map_name = "region_22.asc"
-	return map_name, region_map_name
+def readFileNames(argv):
+	mapfile = 'relief_22.asc'
+	regionfile = 'region_22.asc'
+	cellsize = 0
+	try:
+		opts, args = getopt.getopt(argv[1:],'hm:r:s:',['help', 'mapfile=','regionfile=', 'cellsize='])
+	except getopt.GetoptError:
+		print(argv[0] + '-m <map file> -r <region file> -s <cellsize>')
+		sys.exit(2)
+	for opt, arg in opts:
+		if opt == '-h':
+			print(argv[0] + '-m <map file> -r <region file> -s <cellsize>')
+			sys.exit()
+		elif opt in ("-m", "--mapfile"):
+			mapfile = arg
+		elif opt in ("-r", "--regionfile"):
+			regionfile = arg
+		elif opt in ("-s", "--cellsize"):
+			cellsize = float(arg)
+	print('Map file is \"' + mapfile + '\"')
+	print('Region file is \"' + regionfile + '\"')
+	print('Cellsize is ' + str(cellsize))
+	return mapfile, regionfile, cellsize
+
+#def readFileNames():
+#	print("Write a file of ASCII map or type enter and file name will be \"relief_22.asc\"")
+#	map_name = input()
+#	if map_name == "":
+#		map_name = "relief_22.asc"
+#	print("Write a file of ASCII region map or type enter and file name will be \"region_22.asc\"")
+#	region_map_name = input()
+#	if region_map_name == "":
+#		region_map_name = "region_22.asc"
+#	return map_name, region_map_name
 
 class altMap:
 	def __init__(self, altitude, nx, ny, dx, NODATA_value):
@@ -33,27 +58,30 @@ class regMap:
 		self.region = region
 		self.NODATA_value = NODATA_value
 
-def interpolateMap(mapIn, dx = -1):
+def interpolateMap(mapIn, regIn, dx = -1):
 	mapOut = altMap(mapIn.altitude, mapIn.nx, mapIn.ny, mapIn.dx, mapIn.NODATA_value)
+	regOut = regMap(regIn.region, regIn.nx, regIn.ny, regIn.dx, regIn.NODATA_value)
 	if dx == -1:
 		print("Write new cell size:")
 		mapOut.dx = input()
 		if mapOut.dx == "":
 			return;
 		else:
-			mapOut.dx = float(mapOut.dx)
+			mapOut.dx = regOut.dx = float(mapOut.dx)
+	elif dx == 0:
+		return mapIn, regIn
 	else:
-		mapOut.dx = dx
+		mapOut.dx = regOut.dx = dx
 
 	altitude_mask = np.copy(mapIn.altitude)
 	f = lambda a: 0 if a == mapIn.NODATA_value else 1
 	fv = np.vectorize(f)
 	altitude_mask = fv(altitude_mask)
 
-	x = np.arange(0, mapIn.dx * mapIn.ncols, mapIn.dx)
-	y = np.arange(0, mapIn.dx * MapIn.nrows, mapIn.dx)
-	xnew = np.arange(0, mapIn.dx * mapIn.ncols, mapOut.dx)
-	ynew = np.arange(0, mapIn.dx * mapIn.nrows, mapOut.dx)
+	x = np.arange(0, mapIn.dx * mapIn.ny, mapIn.dx)
+	y = np.arange(0, mapIn.dx * mapIn.nx, mapIn.dx)
+	xnew = np.arange(0, mapIn.dx * mapIn.ny, mapOut.dx)
+	ynew = np.arange(0, mapIn.dx * mapIn.nx, mapOut.dx)
 	f = interpolate.interp2d(x, y, mapIn.altitude, kind='linear')
 	altitude_interpolation = f(xnew, ynew)
 	f = interpolate.interp2d(x, y, altitude_mask, kind='linear')
@@ -68,7 +96,35 @@ def interpolateMap(mapIn, dx = -1):
 	mapOut.ny = xnew.shape[0]
 	mapOut.nx = ynew.shape[0]
 	mapOut.altitude = altitude_interpolation
-	return mapOut
+
+	region_mask = np.copy(regIn.region)
+	f = lambda a: 0 if a == regIn.NODATA_value else 1
+	fv = np.vectorize(f)
+	region_mask = fv(region_mask)
+	f = lambda a: -1 if a == 0 else a
+	fv = np.vectorize(f)
+	regIn.region = fv(regIn.region)
+
+	x = np.arange(0, regIn.dx * regIn.ny, regIn.dx)
+	y = np.arange(0, regIn.dx * regIn.nx, regIn.dx)
+	xnew = np.arange(0, regIn.dx * regIn.ny, regOut.dx)
+	ynew = np.arange(0, regIn.dx * regIn.nx, regOut.dx)
+	f = interpolate.interp2d(x, y, regIn.region, kind='linear')
+	region_interpolation = f(xnew, ynew)
+	f = interpolate.interp2d(x, y, region_mask, kind='linear')
+	region_interpolation_mask = f(xnew, ynew)
+	f = lambda a: 0 if a < 1 else 1
+	fv = np.vectorize(f)
+	region_interpolation_mask = fv(region_interpolation_mask)
+	region_interpolation = region_interpolation * region_interpolation_mask
+	f = lambda a: 1 if a > 0 else 0 if a < 0 else regIn.NODATA_value
+	fv = np.vectorize(f)
+	region_interpolation = fv(region_interpolation)
+	regOut.ny = xnew.shape[0]
+	regOut.nx = ynew.shape[0]
+	regOut.region = region_interpolation
+
+	return mapOut, regOut
 
 class asc:
 	def __init__(self, map_name='', region_map_name=''):
