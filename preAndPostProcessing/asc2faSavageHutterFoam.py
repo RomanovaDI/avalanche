@@ -300,9 +300,7 @@ def createInitialFields(am, rg, height = 0.5): #rg - region map, height - height
 def main(argv):
 	map_name, region_map_name, cellsize = ra.readFileNames(argv)
 	slope = ra.asc(map_name, region_map_name)
-	print(slope.am.altitude.shape, slope.rg.region.shape)
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
-	print(slope.am.altitude.shape, slope.rg.region.shape)
 	createBMD_simple(slope.am, height = 1, n_cells = 1)
 	createSetFields(slope.am, slope.rg, height = 1)
 	createInitialFields(slope.am, slope.rg, height = 0.5)

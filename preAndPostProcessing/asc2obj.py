@@ -204,9 +204,10 @@ def createOBJ(am, height = 20, height1 = 1, indent = 10): #am - altitude map, he
 	print("blockMeshDict file is ready")
 
 def main():
-	map_name, region_map_name = ra.readFileNames()
+	map_name, region_map_name, cellsize = ra.readFileNames(argv)
 	slope = ra.asc(map_name, region_map_name)
+	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
 	createOBJ(slope.am, 10)
 
 if __name__== "__main__":
-	main()
+	main(sys.argv)
