@@ -8,20 +8,20 @@ x = numpy.linspace(0., 70., nx)
 xy = numpy.tile(x,(ny,1))
 
 def alt(x):
-    if x <= 30.:
-        z = - (x - 40.) / numpy.sqrt(3.)
-    elif x >= 50.:
-        z = 0
-    else:
-        z = (x - 50.)**2 / (40. * numpy.sqrt(3.))
-    return z + 10
+	if x <= 30.:
+		z = - (x - 40.) / numpy.sqrt(3.)
+	elif x >= 50.:
+		z = 0
+	else:
+		z = (x - 50.)**2 / (40. * numpy.sqrt(3.))
+	return z + 10
 
 def reg(x, y):
-    if 1. <= y <= 15. and 7. < x < 13.:
-        f = 0
-    else:
-        f = -9999
-    return f
+	if 1. <= y <= 15. and 7. < x < 13.:
+		f = 0
+	else:
+		f = -9999
+	return f
 
 valt = numpy.vectorize(alt)
 altitude = valt(xy)
