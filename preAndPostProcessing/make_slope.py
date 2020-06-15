@@ -17,7 +17,7 @@ def alt(x):
 	return z + 10
 
 def reg(x, y):
-	if 1. <= y <= 15. and 7. < x < 13.:
+	if 1. <= y <= 15. and 5. <= x <= 10.:
 		f = 0
 	else:
 		f = -9999
@@ -37,7 +37,7 @@ f.write("ncols         %d\n" % ny)
 f.write("nrows         %d\n" % nx)
 f.write("xllcorner     530200,48752344\n")
 f.write("yllcorner     7503732,4955134\n")
-f.write("cellsize      1\n")
+f.write("cellsize      %lf\n" % cellsize)
 f.write("NODATA_value  -9999\n")
 numpy.savetxt(f, altitude.T, fmt='%f')
 f.close()
@@ -47,7 +47,7 @@ f.write("ncols         %d\n" % ny)
 f.write("nrows         %d\n" % nx)
 f.write("xllcorner     530200,48752344\n")
 f.write("yllcorner     7503732,4955134\n")
-f.write("cellsize      1\n")
+f.write("cellsize      %lf\n" % cellsize)
 f.write("NODATA_value  -9999\n")
 numpy.savetxt(f, region.T, fmt='%d')
 f.close()
