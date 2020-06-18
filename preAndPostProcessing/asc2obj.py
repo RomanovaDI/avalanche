@@ -233,6 +233,160 @@ def createOBJrefine(am, height1 = 1): #am - altitude map, height1 - altitude of 
 	file_obj.close()
 	print("Refine OBJ file is ready")
 
+def createOBJregion(am, rg, height = 20): #am - altitude map
+	print("Creating start and finish OBJ files.")
+	file_obj_start = open("startAreaSlope.obj", "w")
+	file_obj_finish = open("finishAreaSlope.obj", "w")
+	alt_ind_start = np.zeros_like(am.altitude)
+	alt_ind_finish = np.zeros_like(am.altitude)
+	with np.nditer(am.altitude, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			vert0 = it.multi_index
+			vert1 = tuple(map(add, it.multi_index, (1, 0)))
+			vert2 = tuple(map(add, it.multi_index, (1, 1)))
+			vert3 = tuple(map(add, it.multi_index, (0, 1)))
+			if	it[0] != am.NODATA_value and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				am.altitude[vert1] != am.NODATA_value and\
+				am.altitude[vert2] != am.NODATA_value and\
+				am.altitude[vert3] != am.NODATA_value and\
+				rg.region[vert0] != rg.NODATA_value and\
+				rg.region[vert1] != rg.NODATA_value and\
+				rg.region[vert2] != rg.NODATA_value and\
+				rg.region[vert3] != rg.NODATA_value:
+					if rg.region[vert0] == 0:
+						alt_ind_start[it.multi_index] = alt_ind_start[it.multi_index[0]+1,it.multi_index[1]] =\
+							alt_ind_start[it.multi_index[0],it.multi_index[1]+1] = alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1] = 1
+					if rg.region[vert0] == 1:
+						alt_ind_finish[it.multi_index] = alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]] =\
+							alt_ind_finish[it.multi_index[0],it.multi_index[1]+1] = alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1] = 1
+			it.iternext()
+	n_vertices = 0
+	for it in np.nditer(alt_ind_start, op_flags=['readwrite']):
+		if it == 0:
+			it[...] = -1
+		else:
+			it[...] = n_vertices
+			n_vertices += 1
+	n_vertices = 0
+	for it in np.nditer(alt_ind_finish, op_flags=['readwrite']):
+		if it == 0:
+			it[...] = -1
+		else:
+			it[...] = n_vertices
+			n_vertices += 1
+	n_layers = 2
+	with np.nditer(alt_ind_start, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			if it[0] > -1:
+				file_obj_start.write('v %f %f %f\n' % (am.dx * it.multi_index[0], am.dx * it.multi_index[1],\
+					am.altitude[it.multi_index] - am.alt_min))
+				file_obj_start.write('v %f %f %f\n' % (am.dx * it.multi_index[0], am.dx * it.multi_index[1],\
+					am.altitude[it.multi_index] - am.alt_min + height))
+			it.iternext()
+	file_obj_start.write('g refineSlope\n')
+	l1 = 1
+	l2 = 2
+	with np.nditer(alt_ind_start, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			if	it[0] > -1 and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				alt_ind_start[it.multi_index[0]+1,it.multi_index[1]] != -1 and\
+				alt_ind_start[it.multi_index[0],it.multi_index[1]+1] != -1 and\
+				alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1] != -1:
+					file_obj_start.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l1, alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+						alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+						alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1))
+					file_obj_start.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l2, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2,\
+						alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2,\
+						alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l2, alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2))
+					if	it.multi_index[1]-1 < 0 or\
+						alt_ind_start[it.multi_index[0],it.multi_index[1]-1] == -1 or\
+						alt_ind_start[it.multi_index[0]+1,it.multi_index[1]-1] == -1:
+							file_obj_start.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l1, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+								it[0]*n_layers+l2, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+								alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2, it[0]*n_layers+l2))
+					if	it.multi_index[0]-1 < 0 or\
+						alt_ind_start[it.multi_index[0]-1,it.multi_index[1]] == -1 or\
+						alt_ind_start[it.multi_index[0]-1,it.multi_index[1]+1] == -1:
+							file_obj_start.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l1, it[0]*n_layers+l2,\
+								alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+								alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+								it[0]*n_layers+l2, alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2))
+					if	it.multi_index[1]+2 >= am.ny or\
+						alt_ind_start[it.multi_index[0],it.multi_index[1]+2] == -1 or\
+						alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+2] == -1:
+							file_obj_start.write('f %d %d %d\nf %d %d %d\n' % (alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+								alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1,\
+								alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1, alt_ind_start[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2,\
+								alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l2))
+					if	it.multi_index[0]+2 >= am.nx or\
+						alt_ind_start[it.multi_index[0]+2,it.multi_index[1]] == -1 or\
+						alt_ind_start[it.multi_index[0]+2,it.multi_index[1]+1] == -1:
+							file_obj_start.write('f %d %d %d\nf %d %d %d\n' % (alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+								alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2,\
+								alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1, alt_ind_start[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l2,\
+								alt_ind_start[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2))
+			it.iternext()
+	with np.nditer(alt_ind_finish, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			if it[0] > -1:
+				file_obj_finish.write('v %f %f %f\n' % (am.dx * it.multi_index[0], am.dx * it.multi_index[1],\
+					am.altitude[it.multi_index] - am.alt_min))
+				file_obj_finish.write('v %f %f %f\n' % (am.dx * it.multi_index[0], am.dx * it.multi_index[1],\
+					am.altitude[it.multi_index] - am.alt_min + height))
+			it.iternext()
+	file_obj_finish.write('g refineSlope\n')
+	l1 = 1
+	l2 = 2
+	with np.nditer(alt_ind_finish, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			if	it[0] > -1 and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]] != -1 and\
+				alt_ind_finish[it.multi_index[0],it.multi_index[1]+1] != -1 and\
+				alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1] != -1:
+					file_obj_finish.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l1, alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+						alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+						alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1))
+					file_obj_finish.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l2, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2,\
+						alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2,\
+						alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l2, alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2))
+					if	it.multi_index[1]-1 < 0 or\
+						alt_ind_finish[it.multi_index[0],it.multi_index[1]-1] == -1 or\
+						alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]-1] == -1:
+							file_obj_finish.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l1, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+								it[0]*n_layers+l2, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+								alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2, it[0]*n_layers+l2))
+					if	it.multi_index[0]-1 < 0 or\
+						alt_ind_finish[it.multi_index[0]-1,it.multi_index[1]] == -1 or\
+						alt_ind_finish[it.multi_index[0]-1,it.multi_index[1]+1] == -1:
+							file_obj_finish.write('f %d %d %d\nf %d %d %d\n' % (it[0]*n_layers+l1, it[0]*n_layers+l2,\
+								alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+								alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+								it[0]*n_layers+l2, alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2))
+					if	it.multi_index[1]+2 >= am.ny or\
+						alt_ind_finish[it.multi_index[0],it.multi_index[1]+2] == -1 or\
+						alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+2] == -1:
+							file_obj_finish.write('f %d %d %d\nf %d %d %d\n' % (alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l1,\
+								alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1,\
+								alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1, alt_ind_finish[it.multi_index[0],it.multi_index[1]+1]*n_layers+l2,\
+								alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l2))
+					if	it.multi_index[0]+2 >= am.nx or\
+						alt_ind_finish[it.multi_index[0]+2,it.multi_index[1]] == -1 or\
+						alt_ind_finish[it.multi_index[0]+2,it.multi_index[1]+1] == -1:
+							file_obj_finish.write('f %d %d %d\nf %d %d %d\n' % (alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l1,\
+								alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2,\
+								alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l1, alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]+1]*n_layers+l2,\
+								alt_ind_finish[it.multi_index[0]+1,it.multi_index[1]]*n_layers+l2))
+			it.iternext()
+	file_obj_start.close()
+	file_obj_finish.close()
+	print("Start and finish OBJ files are ready")
+
 def createBMD(am, height = 20): #am - altitude map, height1 - altitude of refinement area
 	print("Creating blockMeshDict file")
 	max_x = am.nx * am.dx
@@ -272,8 +426,9 @@ def main(argv):
 	createOBJrefine(slope.am, height1 = 2)
 	createBMD(slope.am, height = 20)
 	#sfd.createSetFields(slope.am, slope.rg, height = 2)
-	sfd.createSetFieldsRotated(slope.am, slope.rg, height = 2)
-	createSmall22(slope.am)
+	sfd.createSetFieldsRotated(slope.am, slope.rg, height = 5)
+	#createSmall22(slope.am)
+	createOBJregion(slope.am, slope.rg, height = 1)
 
 if __name__== "__main__":
 	main(sys.argv)

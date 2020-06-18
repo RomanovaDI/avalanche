@@ -222,8 +222,8 @@ class asc:
 		region_pre = np.loadtxt(region_file_map, dtype=np.str)
 		region_file_map.close()
 		region_pre = np.char.replace(region_pre, ',', '.').astype(np.float32)
-		x_margin = int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize)
-		y_margin = int(abs(self.region_yllcorner - self.yllcorner) / self.cellsize)
+		x_margin = self.ncols - self.region_ncols - int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize)
+		y_margin = self.nrows - self.region_nrows - int(abs(self.region_yllcorner - self.yllcorner) / self.cellsize)
 		region = np.full(self.am.altitude.shape, self.am.NODATA_value)
 		with np.nditer(region, flags=['multi_index'], op_flags=['writeonly']) as it:
 			while not it.finished:
@@ -231,8 +231,7 @@ class asc:
 					it.multi_index[1] > y_margin and\
 					it.multi_index[0] - x_margin < self.region_nrows and\
 					it.multi_index[1] - y_margin < self.region_ncols and\
-					(region_pre[it.multi_index[0]-x_margin, it.multi_index[1]-y_margin] == 0 or\
-					region_pre[it.multi_index[0]-x_margin, it.multi_index[1]-y_margin] == 1):
+					region_pre[it.multi_index[0]-x_margin, it.multi_index[1]-y_margin] != self.region_NODATA_value:
 						it[0] = region_pre[it.multi_index[0]-x_margin, it.multi_index[1]-y_margin]
 				it.iternext()
 		self.rg = regMap(region, self.nrows, self.ncols, self.cellsize, self.NODATA_value)
