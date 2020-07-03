@@ -36,8 +36,8 @@ def createBMD_simple(am, height = 1, n_cells = 1): #am - altitude map, height1 -
 	with np.nditer(alt_ind, flags=['multi_index'], op_flags=['readonly']) as it:
 		while not it.finished:
 			if	it[0] != -1:
-				file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[it.multi_index]))
-				file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[it.multi_index] + height))
+				file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[it.multi_index] - am.alt_min))
+				file_blockMeshDict.write("\t(%f\t%f\t%f)\n" % (it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[it.multi_index] - am.alt_min+ height))
 			it.iternext()
 	file_blockMeshDict.write(");\n\nblocks\n(\n")
 	with np.nditer(alt_ind, flags=['multi_index'], op_flags=["readonly"]) as it:
@@ -172,6 +172,7 @@ def createReleaseArea(am, rg, height = 2):#rg - region map, height - height of s
 				ind_s_x = it.multi_index[0]
 				ind_s_y = it.multi_index[1]
 				break
+			it.iternext()
 #	while ind != contour_num + 1:
 #		neib = list(tuple(map(add, it.multi_index, (1, 1))),
 #					tuple(map(add, it.multi_index, (-1, 1))),
@@ -231,8 +232,8 @@ def createSetFields(am, rg, height = 2): #rg - region map, height - height of sn
 			if	it[0] == 0 and\
 				am.altitude[it.multi_index] != am.NODATA_value:
 				file.write('\tboxToCell\n\t{\n\t\tbox (%lf %lf %lf) (%lf %lf %lf);\n\t\tfieldValues\n\t\t(\n\t\t\tvolScalarFieldValue h 0.5\n\t\t);\n\t}' % (\
-					it.multi_index[0] * am.dx, it.multi_index[1] * am.dx ,am.altitude[it.multi_index],\
-					(it.multi_index[0] + 1) * am.dx, (it.multi_index[1] + 1) * am.dx, am.altitude[it.multi_index] + height))
+					it.multi_index[0] * am.dx, it.multi_index[1] * am.dx ,am.altitude[it.multi_index] - am.alt_min ,\
+					(it.multi_index[0] + 1) * am.dx, (it.multi_index[1] + 1) * am.dx, am.altitude[it.multi_index] - am.alt_min + height))
 			it.iternext()
 	file.write(');')
 	file.close()
@@ -301,9 +302,9 @@ def main(argv):
 	map_name, region_map_name, cellsize = ra.readFileNames(argv)
 	slope = ra.asc(map_name, region_map_name)
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
-	createBMD_simple(slope.am, height = 1, n_cells = 1)
-	createSetFields(slope.am, slope.rg, height = 1)
-	createInitialFields(slope.am, slope.rg, height = 0.5)
+	createBMD_simple(slope.am, height = slope.am.dx, n_cells = 1)
+	#createSetFields(slope.am, slope.rg, height = 1)
+	createInitialFields(slope.am, slope.rg, height = 1)
 	#createReleaseArea(slope.am, slope.rg, 2)
 
 if __name__== "__main__":

@@ -64,9 +64,9 @@ def createOBJ(am, height = 20): #am - altitude map
 					am.altitude[it.multi_index] - am.alt_min + height))
 				file_obj_slope.write('v %f %f %f\n' % (am.dx * it.multi_index[0], am.dx * it.multi_index[1],\
 					am.altitude[it.multi_index] - am.alt_min))
-				if fl == 0:
-					print("Point inside the calculation area: (%f %f %f)" % (am.dx * it.multi_index[0] + 0.1 * am.dx,\
-						am.dx * it.multi_index[1] + 0.1 * am.dx, am.altitude[it.multi_index] - am.alt_min + 0.5 * am.dx))
+				if fl == 0 and it.multi_index[0] > am.nx / 2 and it.multi_index[1] > am.ny / 2:
+					print("Point inside the calculation area: (%f %f %f)" % (am.dx * it.multi_index[0] + 0.5 * am.dx,\
+						am.dx * it.multi_index[1] + 0.5 * am.dx, am.altitude[it.multi_index] - am.alt_min + 0.5 * am.dx))
 					fl = 1
 			it.iternext()
 	file_obj.write('g slope\n')
@@ -422,13 +422,13 @@ def main(argv):
 	map_name, region_map_name, cellsize = ra.readFileNames(argv)
 	slope = ra.asc(map_name, region_map_name)
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
-	createOBJ(slope.am, height = 20)
-	createOBJrefine(slope.am, height1 = 2)
-	createBMD(slope.am, height = 20)
+	#createOBJ(slope.am, height = 20)
+	#createOBJrefine(slope.am, height1 = 2)
+	#createBMD(slope.am, height = 20)
 	#sfd.createSetFields(slope.am, slope.rg, height = 2)
-	sfd.createSetFieldsRotated(slope.am, slope.rg, height = 5)
+	#sfd.createSetFieldsRotated(slope.am, slope.rg, height = 5)
 	#createSmall22(slope.am)
-	createOBJregion(slope.am, slope.rg, height = 1)
+	createOBJregion(slope.am, slope.rg, height = 21)
 
 if __name__== "__main__":
 	main(sys.argv)

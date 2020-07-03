@@ -271,7 +271,7 @@ def main(argv):
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
 	#createBlockMeshDict(slope.am, height=20)
 	createBlockMeshDictInclined(slope.am, height=20)
-	sfd.createSetFieldsRotated(slope.am, slope.rg, height=5)
+	sfd.createSetFieldsRotated(slope.am, slope.rg, height=15)
 	#sfd.createSetFields(slope.am, slope.rg, height=20)
 
 if __name__== "__main__":
