@@ -9,25 +9,33 @@ def readFileNames(argv):
 	mapfile = 'relief_22.asc'
 	regionfile = 'region_22.asc'
 	cellsize = 0
+	snowdepth = 5
+	areaheight = 20
 	try:
-		opts, args = getopt.getopt(argv[1:],'hm:r:s:',['help', 'mapfile=','regionfile=', 'cellsize='])
+		opts, args = getopt.getopt(argv[1:],'hm:r:c:s:z:',['help', 'mapfile=','regionfile=', 'cellsize=', 'snowdepth=', 'areaheight='])
 	except getopt.GetoptError:
-		print(argv[0] + '-m <map file> -r <region file> -s <cellsize>')
+		print(argv[0] + '-m <map file> -r <region file> -c <cellsize> -s <snowdepth> -z <areaheight>')
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-h':
-			print(argv[0] + '-m <map file> -r <region file> -s <cellsize>')
+			print(argv[0] + '-m <map file> -r <region file> -c <cellsize> -s <snowdepth> -z <areaheight>')
 			sys.exit()
 		elif opt in ("-m", "--mapfile"):
 			mapfile = arg
 		elif opt in ("-r", "--regionfile"):
 			regionfile = arg
-		elif opt in ("-s", "--cellsize"):
+		elif opt in ("-c", "--cellsize"):
 			cellsize = float(arg)
+		elif opt in ("-s", "--snowdepth"):
+			snowdepth = float(arg)
+		elif opt in ("-z", "--areaheight"):
+			areaheight = float(arg)
 	print('Map file is \"' + mapfile + '\"')
 	print('Region file is \"' + regionfile + '\"')
-	print('Cellsize is ' + str(cellsize))
-	return mapfile, regionfile, cellsize
+	print('Cellsize is ' + str(cellsize) + ' meters')
+	print('Depth of snow cover is ' + str(snowdepth) + ' meters')
+	print('Depth of calculation area is ' + str(areaheight) + ' meters')
+	return mapfile, regionfile, cellsize, snowdepth, areaheight
 
 #def readFileNames():
 #	print("Write a file of ASCII map or type enter and file name will be \"relief_22.asc\"")

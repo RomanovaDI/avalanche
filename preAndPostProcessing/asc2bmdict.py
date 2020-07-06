@@ -266,13 +266,13 @@ def createBlockMeshDictInclined(am, height = 20):
 	print("blockMeshDict file is ready")
 
 def main(argv):
-	map_name, region_map_name, cellsize = ra.readFileNames(argv)
+	map_name, region_map_name, cellsize, depthOfSnowCover, heightOfCalculationArea = ra.readFileNames(argv)
 	slope = ra.asc(map_name, region_map_name)
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
-	#createBlockMeshDict(slope.am, height=20)
-	createBlockMeshDictInclined(slope.am, height=20)
-	sfd.createSetFieldsRotated(slope.am, slope.rg, height=15)
-	#sfd.createSetFields(slope.am, slope.rg, height=20)
+	#createBlockMeshDict(slope.am, height=heightOfCalculationArea)
+	createBlockMeshDictInclined(slope.am, height=heightOfCalculationArea)
+	sfd.createSetFieldsRotated(slope.am, slope.rg, height=depthOfSnowCover)
+	#sfd.createSetFields(slope.am, slope.rg, height=heightOfCalculationArea)
 
 if __name__== "__main__":
 	main(sys.argv)
