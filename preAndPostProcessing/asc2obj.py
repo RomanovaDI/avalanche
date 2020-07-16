@@ -419,16 +419,16 @@ def createBMD(am, height = 20): #am - altitude map, height1 - altitude of refine
 	print("blockMeshDict file is ready")
 
 def main(argv):
-	map_name, region_map_name, cellsize = ra.readFileNames(argv)
+	map_name, region_map_name, cellsize, depthOfSnowCover, heightOfCalculationArea = ra.readFileNames(argv)
 	slope = ra.asc(map_name, region_map_name)
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
-	#createOBJ(slope.am, height = 20)
+	createOBJ(slope.am, height=heightOfCalculationArea)
 	#createOBJrefine(slope.am, height1 = 2)
 	#createBMD(slope.am, height = 20)
 	#sfd.createSetFields(slope.am, slope.rg, height = 2)
 	#sfd.createSetFieldsRotated(slope.am, slope.rg, height = 5)
 	#createSmall22(slope.am)
-	createOBJregion(slope.am, slope.rg, height = 21)
+	createOBJregion(slope.am, slope.rg, height=heightOfCalculationArea+1)
 
 if __name__== "__main__":
 	main(sys.argv)
