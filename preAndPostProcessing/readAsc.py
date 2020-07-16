@@ -230,11 +230,11 @@ class asc:
 		region_pre = np.loadtxt(region_file_map, dtype=np.str)
 		region_file_map.close()
 		region_pre = np.char.replace(region_pre, ',', '.').astype(np.float32)
-		#y_margin = int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize)
-		x_margin = self.ncols - self.region_ncols - int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize) - 4
+		y_margin = int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize)
+		#x_margin = self.ncols - self.region_ncols - int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize) - 4 # the best for 22 slope
 		#y_margin = self.nrows - self.region_nrows - int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize)
-		#x_margin = int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize)
-		y_margin = self.nrows - self.region_nrows - int(abs(self.region_yllcorner - self.yllcorner) / self.cellsize) - 10
+		x_margin = int(abs(self.region_xllcorner - self.xllcorner) / self.cellsize)
+		#y_margin = self.nrows - self.region_nrows - int(abs(self.region_yllcorner - self.yllcorner) / self.cellsize) - 10 # the best for 22 slope
 		#x_margin = int(abs(self.region_yllcorner - self.yllcorner) / self.cellsize)
 		#y_margin = int(abs(self.region_yllcorner - self.yllcorner) / self.cellsize)
 		region = np.full(self.am.altitude.shape, self.am.NODATA_value)

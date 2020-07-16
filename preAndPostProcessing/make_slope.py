@@ -6,7 +6,7 @@ print("Enter length:")
 length = float(input())
 scale = length / 70.
 nx = int(70. * scale / cellsize)
-ny = int(21. * scale / cellsize)
+ny = int(25. * scale / cellsize)
 x = numpy.linspace(0., 70. * scale, nx)
 xy = numpy.tile(x,(ny,1))
 
@@ -20,7 +20,7 @@ def alt(x, scale=1):
 	return z + 10
 
 def reg(x, y, scale=1):
-	if 1. * scale <= y <= 15. * scale and 5. * scale <= x <= 10. * scale:
+	if 1. * scale <= y <= 15. * scale and 5. * scale <= x <= 15. * scale:
 		f = 0
 	else:
 		f = -9999
