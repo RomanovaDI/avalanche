@@ -2,8 +2,8 @@ import numpy as np
 from scipy import interpolate
 from operator import add
 import math
-import readAsc as ra
 import sys
+import readAsc as ra
 import setFieldsDict as sfd
 import blockMeshDict as bmd
 
@@ -13,7 +13,8 @@ def main(argv):
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
 	#bmd.createBlockMeshDict(slope.am, height=heightOfCalculationArea)
 	bmd.createBlockMeshDictInclined(slope.am, height=heightOfCalculationArea)
-	sfd.createSetFieldsRotated(slope.am, slope.rg, height=depthOfSnowCover)
+	sfd.createSetFieldsFourPhasesRotated(slope.am, slope.rg, height=depthOfSnowCover)
+	#sfd.createSetFieldsRotated(slope.am, slope.rg, height=depthOfSnowCover)
 	#sfd.createSetFields(slope.am, slope.rg, height=heightOfCalculationArea)
 
 if __name__== "__main__":
