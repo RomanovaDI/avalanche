@@ -253,7 +253,7 @@ def createTopoSetRotatedStartFinish(am, rg, height = 20): #rg - region map, heig
 						finishAreaFirstEntryFlag = 0
 					else:
 						file.write('\t{\n\t\tname\t\tfinishArea;\n\t\ttype\t\tcellSet;\n\t\taction\t\tadd;\n')
-					file.write('\t\trotatedBoxToCell;\n\t\torigin (%f %f %f);\n\t\ti (%f %f %f);\n\t\tj (%f %f %f);\n\t\tk (%f %f %f);\n\t}\n' % (\
+					file.write('\t\tsource\t\trotatedBoxToCell;\n\t\torigin (%f %f %f);\n\t\ti (%f %f %f);\n\t\tj (%f %f %f);\n\t\tk (%f %f %f);\n\t}\n' % (\
 						it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[vert0] - am.alt_min + indent,\
 						am.dx, 0, am.altitude[vert1] - am.altitude[vert0],\
 						0, am.dx, am.altitude[vert3] - am.altitude[vert0],\
