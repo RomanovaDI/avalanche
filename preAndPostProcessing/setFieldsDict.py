@@ -211,3 +211,54 @@ def createReleaseArea(am, rg, height = 2):#rg - region map, height - height of s
 	file.write('\t\t);\n\t}\n);')
 	file.close()
 	print("releaseArea file is ready")
+
+def createTopoSetRotatedStartFinish(am, rg, height = 20): #rg - region map, height - height of calculation domain
+	print("Creating topoSetDict file.")
+	file = open("topoSetDict", "w")
+	file.write('FoamFile\n{\n\tversion\t2.0;\n\tformat\tascii;\n\tclass\tdictionary;\n\tlocation\t"system";\n\tobject\ttopoSetDict;\n}\n')
+	file.write('actions\n(\n')
+	indent = 0
+	startAreaFirstEntryFlag = 1
+	finishAreaFirstEntryFlag = 1
+	with np.nditer(rg.region, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			vert0 = it.multi_index
+			vert1 = tuple(map(add, it.multi_index, (1, 0)))
+			vert2 = tuple(map(add, it.multi_index, (1, 1)))
+			vert3 = tuple(map(add, it.multi_index, (0, 1)))
+			if	it[0] == 0 and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				rg.region[vert1] == 0 and\
+				rg.region[vert2] == 0 and\
+				rg.region[vert3] == 0:
+					if startAreaFirstEntryFlag == 1:
+						file.write('\t{\n\t\tname\t\tstartArea;\n\t\ttype\t\tcellSet;\n\t\taction\t\tnew;\n')
+						startAreaFirstEntryFlag = 0
+					else:
+						file.write('\t{\n\t\tname\t\tstartArea;\n\t\ttype\t\tcellSet;\n\t\taction\t\tadd;\n')
+					file.write('\t\tsource\t\trotatedBoxToCell;\n\t\torigin (%f %f %f);\n\t\ti (%f %f %f);\n\t\tj (%f %f %f);\n\t\tk (%f %f %f);\n\t}\n' % (\
+						it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[vert0] - am.alt_min + indent,\
+						am.dx, 0, am.altitude[vert1] - am.altitude[vert0],\
+						0, am.dx, am.altitude[vert3] - am.altitude[vert0],\
+						0, 0, height))
+			if	it[0] == 1 and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				rg.region[vert1] == 1 and\
+				rg.region[vert2] == 1 and\
+				rg.region[vert3] == 1:
+					if finishAreaFirstEntryFlag == 1:
+						file.write('\t{\n\t\tname\t\tfinishArea;\n\t\ttype\t\tcellSet;\n\t\taction\t\tnew;\n')
+						finishAreaFirstEntryFlag = 0
+					else:
+						file.write('\t{\n\t\tname\t\tfinishArea;\n\t\ttype\t\tcellSet;\n\t\taction\t\tadd;\n')
+					file.write('\t\trotatedBoxToCell;\n\t\torigin (%f %f %f);\n\t\ti (%f %f %f);\n\t\tj (%f %f %f);\n\t\tk (%f %f %f);\n\t}\n' % (\
+						it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[vert0] - am.alt_min + indent,\
+						am.dx, 0, am.altitude[vert1] - am.altitude[vert0],\
+						0, am.dx, am.altitude[vert3] - am.altitude[vert0],\
+						0, 0, height))
+			it.iternext()
+	file.write(');')
+	file.close()
+	print("topoSetDict file is ready")

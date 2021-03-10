@@ -16,6 +16,7 @@ def main(argv):
 	sfd.createSetFieldsFourPhasesRotated(slope.am, slope.rg, height=depthOfSnowCover)
 	#sfd.createSetFieldsRotated(slope.am, slope.rg, height=depthOfSnowCover)
 	#sfd.createSetFields(slope.am, slope.rg, height=heightOfCalculationArea)
+	#sfd.createTopoSetRotatedStartFinish(slope.am, slope.rg, height=20)
 
 if __name__== "__main__":
 	main(sys.argv)
