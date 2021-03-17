@@ -1,0 +1,18 @@
+finishAreaIntegrateAlphaWater
+{
+	type			volFieldValue;
+	libs			(fieldFunctionObjects);
+	executeControl	writeTime;
+	writeControll	writeTime;
+	
+	fields			(alpha.water);
+	operation		volIntegrate;
+	regionType		cellZone;
+	name			finishArea;
+
+//	surfaceFormat   none;
+
+	writeFields     true;
+
+//	log				false;
+}

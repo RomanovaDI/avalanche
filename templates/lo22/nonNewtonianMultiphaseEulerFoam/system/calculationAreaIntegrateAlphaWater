@@ -1,0 +1,17 @@
+calculationAreaIntegrateAlphaWater
+{
+	type			volFieldValue;
+	libs			(fieldFunctionObjects);
+	executeControl	writeTime;
+	writeControll	writeTime;
+	
+	fields			(alpha.water);
+	operation		volIntegrate;
+	regionType		all;
+
+//	surfaceFormat   none;
+
+	writeFields     true;
+
+//	log				false;
+}

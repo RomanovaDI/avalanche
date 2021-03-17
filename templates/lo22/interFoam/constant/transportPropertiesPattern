@@ -1,0 +1,48 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7  
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases (water air);
+
+water
+{
+	transportModel HerschelBulkley;
+	HerschelBulkleyCoeffs
+	{
+	    //nu0      [ 0 2 -1 0 0 0 0 ] 1e05;//1e-03;
+	    //tau0     [ 0 2 -2 0 0 0 0 ] 1e01;//1;
+	    //k        [ 0 2 -1 0 0 0 0 ] 5;//1e-05;
+	    //n        [ 0 0  0 0 0 0 0 ] 5e-01;//1;
+nu0_pattern
+tau0_pattern
+k_pattern
+n_pattern
+	}
+    //rho             200;//1000;
+rho_pattern
+}
+
+air
+{
+    transportModel  Newtonian;
+    nu              1.48e-05;
+    rho             1;
+}
+
+sigma           0;
+
+
+// ************************************************************************* //
