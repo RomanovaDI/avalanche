@@ -13,10 +13,11 @@ def main(argv):
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
 	#bmd.createBlockMeshDict(slope.am, height=heightOfCalculationArea)
 	bmd.createBlockMeshDictInclined(slope.am, height=heightOfCalculationArea)
-	sfd.createSetFieldsFourPhasesRotated(slope.am, slope.rg, height=depthOfSnowCover)
-	#sfd.createSetFieldsRotated(slope.am, slope.rg, height=depthOfSnowCover)
+#	sfd.createSetFieldsFourPhasesRotated(slope.am, slope.rg, height=depthOfSnowCover)
+#	sfd.createSetFieldsRotated(slope.am, slope.rg, height=depthOfSnowCover)
+	sfd.createSetFieldsRotatedStartFinish(slope.am, slope.rg, height=depthOfSnowCover)
 	#sfd.createSetFields(slope.am, slope.rg, height=heightOfCalculationArea)
-	#sfd.createTopoSetRotatedStartFinish(slope.am, slope.rg, height=20)
+	sfd.createTopoSetRotatedStartFinish(slope.am, slope.rg, height=heightOfCalculationArea)
 
 if __name__== "__main__":
 	main(sys.argv)

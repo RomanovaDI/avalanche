@@ -218,7 +218,7 @@ def createBlockMeshDictInclined(am, height = 20):
 					file_blockMeshDict.write("\t\t\t(%d %d %d %d)\n" %\
 						(alt_ind[vert0] * n_layers+l2, alt_ind[vert1] * n_layers+l2, alt_ind[vert2] * n_layers+l2, alt_ind[vert3] * n_layers+l2))
 			it.iternext()
-	file_blockMeshDict.write("\t\t);\n\t}\n\tsides\n\t{\n\t\ttype patch;\n\t\tfaces\n\t\t(\n")
+	file_blockMeshDict.write("\t\t);\n\t}\n\tsides\n\t{\n\t\ttype wall;\n\t\tfaces\n\t\t(\n")
 	with np.nditer(alt_ind, flags=['multi_index'], op_flags=['readonly']) as it:
 		while not it.finished:
 			vert0 = it.multi_index
