@@ -1,0 +1,18 @@
+calculationAreaMaxVelocity
+{
+	type			volFieldValue;
+	libs			(fieldFunctionObjects);
+	executeControl	writeTime;
+	writeControll	writeTime;
+	
+	fields			(U);
+	operation		max;
+	postOperation	mag;
+	regionType		all;
+
+//	surfaceFormat   none;
+
+	writeFields     true;
+
+//	log				false;
+}
