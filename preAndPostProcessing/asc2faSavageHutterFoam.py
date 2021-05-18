@@ -13,7 +13,8 @@ def main(argv):
 	slope.am, slope.rg = ra.interpolateMap(slope.am, slope.rg, cellsize)
 	bmd.createBlockMeshDictInclined(slope.am, height = slope.am.dx)
 	#sfd.createSetFields(slope.am, slope.rg, height = 1)
-	sfd.createInitialFields(slope.am, slope.rg, height = depthOfSnowCover)
+	#sfd.createInitialFields(slope.am, slope.rg, height = depthOfSnowCover)
+	sfd.createInitialFields2012(slope.am, slope.rg, height = depthOfSnowCover)
 	#sfd.createReleaseArea(slope.am, slope.rg, 2)
 
 if __name__== "__main__":

@@ -194,6 +194,60 @@ def createInitialFields(am, rg, height = 0.5): #rg - region map, height - height
 	file.close()
 	print("Initial fields files are ready")
 
+def createInitialFields2012(am, rg, height = 0.5): #rg - region map, height - height of snow cover
+	print("Creating initial fields files.")
+	#np.savetxt('tmp.out', rg.region)
+	number = 0
+	with np.nditer(am.altitude, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			if	it[0] != am.NODATA_value and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				am.altitude[it.multi_index[0]+1,it.multi_index[1]] != am.NODATA_value and\
+				am.altitude[it.multi_index[0],it.multi_index[1]+1] != am.NODATA_value and\
+				am.altitude[it.multi_index[0]+1,it.multi_index[1]+1] != am.NODATA_value:
+					number += 1
+			it.iternext()
+	file = open("h", "w")
+	file.write('FoamFile\n{\n\tversion\t2.0;\n\t format\tascii;\n\tclass\tareaScalarField;\n\tlocation\t"0";\n\tobject\th;\n}\n')
+	file.write('dimensions\t[0 1 0 0 0 0 0];\ninternalField\tnonuniform List<scalar>\n')
+	file.write('%d\n(\n' % (number))
+	with np.nditer(am.altitude, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			if	it[0] != am.NODATA_value and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				am.altitude[it.multi_index[0]+1,it.multi_index[1]] != am.NODATA_value and\
+				am.altitude[it.multi_index[0],it.multi_index[1]+1] != am.NODATA_value and\
+				am.altitude[it.multi_index[0]+1,it.multi_index[1]+1] != am.NODATA_value:
+				value = height if rg.region[it.multi_index] == 0 else 0
+				file.write('%lf\n' % (value))
+			it.iternext()
+	file.write(')\n;\n')
+	file.write('boundaryField\n{\n\tsides\n\t{\n\t\ttype\t\tinletOutlet;\n\t\tphi\t\tphis;\n\t\tinletValue\t\tuniform 0;\n\t\tvalue\t\tuniform 0;\n\t}\n}\n')
+	file.close()
+	file = open("H", "w")
+	file.write('FoamFile\n{\n\tversion\t2.0;\n\t format\tascii;\n\tclass\tvolScalarField;\n\tlocation\t"0";\n\tobject\tH;\n}\n')
+	file.write('dimensions\t[0 1 0 0 0 0 0];\ninternalField\tuniform 0;\n')
+	file.write('boundaryField\n{\n\tsides\n\t{\n\t\ttype\t\tcalculated;\n\t\tvalue\t\tuniform 0;\n\t}\n')
+	file.write('\tslope\n\t{\n\t\ttype\t\tcalculated;\n\t\tvalue\t\tnonuniform List<scalar>\n')
+	file.write('%d\n(\n' % (number))
+	with np.nditer(am.altitude, flags=['multi_index'], op_flags=['readonly']) as it:
+		while not it.finished:
+			if	it[0] != am.NODATA_value and\
+				it.multi_index[0]+1 < am.nx and\
+				it.multi_index[1]+1 < am.ny and\
+				am.altitude[it.multi_index[0]+1,it.multi_index[1]] != am.NODATA_value and\
+				am.altitude[it.multi_index[0],it.multi_index[1]+1] != am.NODATA_value and\
+				am.altitude[it.multi_index[0]+1,it.multi_index[1]+1] != am.NODATA_value:
+				value = height if rg.region[it.multi_index] == 0 else 0
+				file.write('%lf\n' % (value))
+			it.iternext()
+	file.write(')\n;\n\t}\n')
+	file.write('\tatmosphere\n\t{\n\t\ttype\t\tcalculated;\n\t\tvalue\t\tuniform 0;\n\t}\n}\n')
+	file.close()
+	print("Initial fields files are ready")
+
 def createReleaseArea(am, rg, height = 2):#rg - region map, height - height of snow cover
 	print("Creating releaseArea file")
 	file = open("releaseArea", "w")
