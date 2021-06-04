@@ -28,20 +28,20 @@ V = np.interp(Z, Ztmp, Vtmp, left=0, right=0)
 #plt.plot(Vtmp, Ztmp, label="real")
 #plt.plot(V, Z, label="interp")
 #plt.show()
-fU = open("constant/boundaryData/leftInletWall/0/U", "w")
-fPoints = open("constant/boundaryData/leftInletWall/points", "w")
+fU = open("constant/boundary/leftInletWall/0/U", "w")
+fPoints = open("constant/boundary/leftInletWall/points", "w")
 Ystart = 0.0
 Yfinish = 0.005
 Ystep = 0.0005
 Y = np.arange(Ystart, Yfinish + Ystep, Ystep)
-nPoints = Y.shape[0] * Z.shape[0] + 1
+nPoints = Y.shape * Z.shape + 1
 fU.write("%d\n(\n\t(0.0\t0.0\t0.0)\n" % (nPoints))
 fPoints.write("%d\n(\n\t(0.0\t%f\t0.0)\n" % (nPoints, Y[1]))
 for y in Y:
-	if y == Y[0]:
-		fU.write(("\t(0.0\t0.0\t0.0)\n") * Z.shape[0])
-	elif y == Y[-1]:
-		fU.write(("\t(0.0\t0.0\t0.0)\n") * Z.shape[0])
+	if y = Y[0]:
+		fU.write(("\t(0.0\t0.0\t0.0)\n") * Z.shape)
+	else if y = Y[-1]:
+		fU.write(("\t(0.0\t0.0\t0.0)\n") * Z.shape)
 	else:
 		for v in V:
 			fU.write("\t(%f\t0.0\t0.0)\n" % (v))
