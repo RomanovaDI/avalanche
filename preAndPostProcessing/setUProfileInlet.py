@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-dfInlet = pd.read_csv('inlet.txt', delimiter="\t", header=None)
-dfOutlet = pd.read_csv('outlet.txt', delimiter="\t", header=None)
+dfInlet = pd.read_csv('180321inlet.csv', delimiter="\t", header=None)
+#dfOutlet = pd.read_csv('180321_outlet.csv', delimiter="\t", header=None)
 #X = dfInlet[0].to_numpy()
 #A = X.reshape((1, np.size(X)))
 #A = np.repeat(A, np.size(X), axis=0)
@@ -18,13 +18,8 @@ dfOutlet = pd.read_csv('outlet.txt', delimiter="\t", header=None)
 #plt.plot(X, B, label="experiment")
 #plt.plot(Xtest, Htest, label="approximation")
 #plt.show()
-Ztmp = dfInlet[0].to_numpy()
-Zstart = 0.0
-Zfinish = 10.0
-Zstep = 0.25
-Z = np.arange(Zstart, Zfinish + Zstep, Zstep, dtype=float)
-Vtmp = dfInlet[1].to_numpy()
-V = np.interp(Z, Ztmp, Vtmp, left=0, right=0)
+Z = dfInlet[0].to_numpy()
+V = dfInlet[1].to_numpy()
 #plt.plot(Vtmp, Ztmp, label="real")
 #plt.plot(V, Z, label="interp")
 #plt.show()
