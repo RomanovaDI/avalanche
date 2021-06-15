@@ -1,0 +1,21 @@
+devRhoReff
+{
+    // Mandatory entries (unmodifiable)
+    type            turbulenceFields;
+    libs            (fieldFunctionObjects);
+
+    // Mandatory entries (runtime modifiable)
+    // Either field or fields entries
+    field          devRhoReff;
+
+    // Optional (inherited) entries
+//    region          region0;
+    enabled         true;
+    log             true;
+    timeStart       0;
+    timeEnd         1000;
+    executeControl  timeStep;
+    executeInterval 1;
+    writeControl    timeStep;
+    writeInterval   1;
+}
