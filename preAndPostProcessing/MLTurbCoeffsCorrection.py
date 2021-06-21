@@ -9,10 +9,18 @@ import numpy as np
 from scipy.optimize import minimize
 import math
 from multiprocessing import Pool
+from functools import partial
 
 def readHV(fileName):
-	df = pd.read_csv(fileName)
-	HV = df[['Points:2', 'U:0']].to_numpy()
+	df = pd.read_csv(fileName, sep='\t', header=None)
+	HV = df.to_numpy()
+	HV = normalizeHV(HV)
+	dfProfile = pd.DataFrame(HV)
+	return dfProfile
+
+def readHVPostProc(fileName):
+	df = pd.read_csv(fileName, sep='\t', header=None)
+	HV = df.iloc[:, [0,1]].to_numpy()
 	HV = normalizeHV(HV)
 	dfProfile = pd.DataFrame(HV)
 	return dfProfile
@@ -27,19 +35,30 @@ def normalizeHV(HV):
 	return HV
 
 def calcMSE(dfRef, dfTmp):
-	listMSE = map(calcOneMSE, [dfRef, dfTmp])
+	listMSE = list(map(calcOneMSE, dfRef, dfTmp))
+	print(listMSE)
 	MSE = sum(listMSE)
 	return MSE
 
-def calcOneMSE(dfRef, dfTmp):
-	MSE = (dfRef['U:0'] - dfTmp['U:0'])**2
+def calcOneMSE(HVRef, HVTmp):
+	print(HVTmp[1])
+	URef = waterVelocityExtract(HVRef[1,:])
+	UTmp = waterVelocityExtract(HVTmp[1,:])
+	MSE = (URef - UTmp)**2
 	return math.sqrt(MSE.sum())
 
-def runOF(caseDir):
+def waterVelocityExtract(U):
+	it = np.nditer(U, flags=['f_index'], op_flags=['readwrite'])
+	for u in it:
+		if (it.index > 0 and u < U[it.index-1]):
+			u = 0
+	return U
+
+def runOF(caseDir, coeffs):
+	print('Run OF func')
 	sp.call("cd "+caseDir+";\
-			bash -i of2012;\
-			bash -i ./Allclean;\
-			sed \"s/alphaK1_pattern/	alphaK1			"+str(coeffs[0])+";/\" constant/turbulenceProperties > tmp;\
+			pwd;\
+			sed \"s/alphaK1_pattern/	alphaK1			"+str(coeffs[0])+";/\" constant/turbulencePropertiesPattern > tmp;\
 			mv tmp constant/turbulenceProperties;\
 			sed \"s/alphaK2_pattern/	alphaK2			"+str(coeffs[1])+";/\" constant/turbulenceProperties > tmp;\
 			mv tmp constant/turbulenceProperties;\
@@ -63,20 +82,22 @@ def runOF(caseDir):
 			mv tmp constant/turbulenceProperties;\
 			sed \"s/c1_pattern/	c1	"+str(coeffs[11])+";/\" constant/turbulenceProperties > tmp;\
 			mv tmp constant/turbulenceProperties;\
-			bash -i ./Allrun;\
+			sbatch -n8 -W -o log.sbatch Allrun;\
 			cd ../", shell=True)
+#			./Allclean;\
 
 def calcLoss(coeffs, dfRefHV, caseDirs):
-	with Pool() as pool:
-		pool.map(runOF, caseDirs)
-	dfTmpHV = map(readHV, map(lambda e : e + "data/OutletCalcKW.csv", caseDirs))
+	print('Calculate loss function')
+#	with Pool() as pool:
+#		pool.map(partial(runOF, coeffs=coeffs), caseDirs)
+	dfTmpHV = list(map(readHVPostProc, list(map(lambda e : e + "postProcessing/singleGraph/0.5/line_U.xy", caseDirs))))
 	MSE = calcMSE(dfRefHV, dfTmpHV)
 	open("log.MLTransportCoeffsCorrection", "a").write("coeffs: "+str(coeffs)+"\n")
 	open("log.MLTransportCoeffsCorrection", "a").write("MSE = "+str(MSE)+"\n")
 	return MSE
 
 def minimizeSciPy(initCoeffs, bounds, referenceValue, caseDir):
-	res = minimize(calcLoss, initCoeffs, args=(referenceValue, caseDir), method='Nelder-Mead', tol=1e-6, bounds=bounds)
+	res = minimize(calcLoss, initCoeffs, args=(referenceValue, caseDir), method='Nelder-Mead', tol=1e-6)#, bounds=bounds)
 	print(res.x)
 
 def main():
@@ -89,7 +110,7 @@ def main():
 	TurbKWCaseDirs = ("constantAngleSlopeTurbKWUProfileInlet180321/",
 				"constantAngleSlopeTurbKWUProfileInlet230421/",
 				"constantAngleSlopeTurbKWUProfileInlet100621/")
-	dfHVRef = map(readHV, RefFiles)
+	dfHVRef = list(map(readHV, RefFiles))
 	minimizeSciPy(coeffs, bounds, dfHVRef, TurbKWCaseDirs)
 
 if __name__ == "__main__":
