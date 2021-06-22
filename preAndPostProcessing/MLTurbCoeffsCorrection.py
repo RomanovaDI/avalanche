@@ -1,8 +1,5 @@
-#import os
-#os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
+# Two unadapted parameters in code: Hstep variable and the last time step
 
-#import tensorflow as tf
-#import tensorflow_probability as tfp
 import subprocess as sp
 import pandas as pd
 import numpy as np
@@ -15,20 +12,18 @@ def readHV(fileName):
 	df = pd.read_csv(fileName, sep='\t', header=None)
 	HV = df.to_numpy()
 	HV = normalizeHV(HV)
-	dfProfile = pd.DataFrame(HV)
-	return dfProfile
+	return HV
 
 def readHVPostProc(fileName):
 	df = pd.read_csv(fileName, sep='\t', header=None)
 	HV = df.iloc[:, [0,1]].to_numpy()
 	HV = normalizeHV(HV)
-	dfProfile = pd.DataFrame(HV)
-	return dfProfile
+	return HV
 
 def normalizeHV(HV):
 	Hstart = HV[0,0]
 	Hfinish = HV[-1,0]
-	Hstep = 0.05
+	Hstep = 0.0001
 	H = np.arange(Hstart, Hfinish + Hstep, Hstep, dtype=float)
 	V = np.interp(H, HV[:,0], HV[:,1], left=0, right=0)
 	HV = np.column_stack((H, V))
@@ -36,14 +31,15 @@ def normalizeHV(HV):
 
 def calcMSE(dfRef, dfTmp):
 	listMSE = list(map(calcOneMSE, dfRef, dfTmp))
-	print(listMSE)
 	MSE = sum(listMSE)
 	return MSE
 
 def calcOneMSE(HVRef, HVTmp):
-	print(HVTmp[1])
-	URef = waterVelocityExtract(HVRef[1,:])
-	UTmp = waterVelocityExtract(HVTmp[1,:])
+	URef = waterVelocityExtract(HVRef[:,1])
+	UTmp = waterVelocityExtract(HVTmp[:,1])
+	size = min(URef.size, UTmp.size)
+	URef = URef[:size]
+	UTmp = UTmp[:size]
 	MSE = (URef - UTmp)**2
 	return math.sqrt(MSE.sum())
 
@@ -55,9 +51,7 @@ def waterVelocityExtract(U):
 	return U
 
 def runOF(caseDir, coeffs):
-	print('Run OF func')
 	sp.call("cd "+caseDir+";\
-			pwd;\
 			sed \"s/alphaK1_pattern/	alphaK1			"+str(coeffs[0])+";/\" constant/turbulencePropertiesPattern > tmp;\
 			mv tmp constant/turbulenceProperties;\
 			sed \"s/alphaK2_pattern/	alphaK2			"+str(coeffs[1])+";/\" constant/turbulenceProperties > tmp;\
@@ -82,14 +76,13 @@ def runOF(caseDir, coeffs):
 			mv tmp constant/turbulenceProperties;\
 			sed \"s/c1_pattern/	c1	"+str(coeffs[11])+";/\" constant/turbulenceProperties > tmp;\
 			mv tmp constant/turbulenceProperties;\
+			./Allclean;\
 			sbatch -n8 -W -o log.sbatch Allrun;\
 			cd ../", shell=True)
-#			./Allclean;\
 
 def calcLoss(coeffs, dfRefHV, caseDirs):
-	print('Calculate loss function')
-#	with Pool() as pool:
-#		pool.map(partial(runOF, coeffs=coeffs), caseDirs)
+	with Pool() as pool:
+		pool.map(partial(runOF, coeffs=coeffs), caseDirs)
 	dfTmpHV = list(map(readHVPostProc, list(map(lambda e : e + "postProcessing/singleGraph/0.5/line_U.xy", caseDirs))))
 	MSE = calcMSE(dfRefHV, dfTmpHV)
 	open("log.MLTransportCoeffsCorrection", "a").write("coeffs: "+str(coeffs)+"\n")
