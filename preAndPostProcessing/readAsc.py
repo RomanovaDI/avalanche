@@ -94,7 +94,7 @@ def interpolateMap(mapIn, regIn, dx = -1):
 	altitude_interpolation = f(xnew, ynew)
 	f = interpolate.interp2d(x, y, altitude_mask, kind='linear')
 	altitude_interpolation_mask = f(xnew, ynew)
-	f = lambda a: 0 if a < 1 else 1
+	f = lambda a: 0 if a < 0.9999 else 1
 	fv = np.vectorize(f)
 	altitude_interpolation_mask = fv(altitude_interpolation_mask)
 	altitude_interpolation = altitude_interpolation * altitude_interpolation_mask
@@ -121,11 +121,12 @@ def interpolateMap(mapIn, regIn, dx = -1):
 	region_interpolation = f(xnew, ynew)
 	f = interpolate.interp2d(x, y, region_mask, kind='linear')
 	region_interpolation_mask = f(xnew, ynew)
-	f = lambda a: 0 if a < 1 else 1
+	f = lambda a: 0 if a < 0.9999 else 1
 	fv = np.vectorize(f)
 	region_interpolation_mask = fv(region_interpolation_mask)
 	region_interpolation = region_interpolation * region_interpolation_mask
-	f = lambda a: 1 if a > 0 else 0 if a < 0 else regIn.NODATA_value
+#	f = lambda a: 1 if a > 0 else 0 if a < 0 else regIn.NODATA_value
+	f = lambda a: regIn.NODATA_value if a == 0 else a
 	fv = np.vectorize(f)
 	region_interpolation = fv(region_interpolation)
 	regOut.ny = xnew.shape[0]
@@ -235,8 +236,8 @@ class asc:
 		region = np.full(self.am.altitude.shape, self.am.NODATA_value)
 		with np.nditer(region, flags=['multi_index'], op_flags=['writeonly']) as it:
 			while not it.finished:
-				if	it.multi_index[0] > x_margin and\
-					it.multi_index[1] > y_margin and\
+				if	it.multi_index[0] >= x_margin and\
+					it.multi_index[1] >= y_margin and\
 					it.multi_index[0] - x_margin < self.region_nrows and\
 					it.multi_index[1] - y_margin < self.region_ncols and\
 					region_pre[it.multi_index[0]-x_margin, it.multi_index[1]-y_margin] != self.region_NODATA_value:

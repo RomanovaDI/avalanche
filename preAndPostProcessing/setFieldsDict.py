@@ -51,12 +51,12 @@ def createSetFieldsRotated(am, rg, height = 2): #rg - region map, height - heigh
 			vert1 = tuple(map(add, it.multi_index, (1, 0)))
 			vert2 = tuple(map(add, it.multi_index, (1, 1)))
 			vert3 = tuple(map(add, it.multi_index, (0, 1)))
-			if	it[0] == 0 and\
+			if	it[0] != am.NODATA_value and\
 				it.multi_index[0]+1 < am.nx and\
 				it.multi_index[1]+1 < am.ny and\
-				rg.region[vert1] == 0 and\
-				rg.region[vert2] == 0 and\
-				rg.region[vert3] == 0:
+				rg.region[vert1] != am.NODATA_value and\
+				rg.region[vert2] != am.NODATA_value and\
+				rg.region[vert3] != am.NODATA_value:
 					file.write('\trotatedBoxToCell\n\t{\n\t\torigin (%f %f %f);\n\t\ti (%f %f %f);\n\t\tj (%f %f %f);\n\t\tk (%f %f %f);\n\t\tfieldValues\n\t\t(\n\t\t\tvolScalarFieldValue alpha.water 1\n\t\t);\n\t}\n' % (\
 						it.multi_index[0] * am.dx, it.multi_index[1] * am.dx, am.altitude[vert0] - am.alt_min + indent,\
 						am.dx, 0, am.altitude[vert1] - am.altitude[vert0],\
