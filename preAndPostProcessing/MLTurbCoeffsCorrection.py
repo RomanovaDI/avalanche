@@ -7,104 +7,63 @@ from scipy.optimize import minimize
 import math
 from multiprocessing import Pool
 from functools import partial
+from datetime import datetime
 
-def readHV(fileName):
-	df = pd.read_csv(fileName, sep='\t', header=None)
-	HV = df.to_numpy()
-	HV = normalizeHV(HV)
-	return HV
+def readLoss(fileName):
+	loss = float(open(fileName, "r").read())
+	return loss
 
-def readHVPostProc(fileName):
-	df = pd.read_csv(fileName, sep='\t', header=None)
-	HV = df.iloc[:, [0,1]].to_numpy()
-	HV = normalizeHV(HV)
-	return HV
-
-def normalizeHV(HV):
-	Hstart = HV[0,0]
-	Hfinish = HV[-1,0]
-	Hstep = 0.0001
-	H = np.arange(Hstart, Hfinish + Hstep, Hstep, dtype=float)
-	V = np.interp(H, HV[:,0], HV[:,1], left=0, right=0)
-	HV = np.column_stack((H, V))
-	return HV
-
-def calcMSE(dfRef, dfTmp):
-	listMSE = list(map(calcOneMSE, dfRef, dfTmp))
-	MSE = sum(listMSE)
-	return MSE
-
-def calcOneMSE(HVRef, HVTmp):
-	URef = waterVelocityExtract(HVRef[:,1])
-	UTmp = waterVelocityExtract(HVTmp[:,1])
-	size = min(URef.size, UTmp.size)
-	URef = URef[:size]
-	UTmp = UTmp[:size]
-	MSE = (URef - UTmp)**2
-	return math.sqrt(MSE.sum())
-
-def waterVelocityExtract(U):
-	it = np.nditer(U, flags=['f_index'], op_flags=['readwrite'])
-	for u in it:
-		if (it.index > 0 and u < U[it.index-1]):
-			u = 0
-	return U
-
-def runOF(caseDir, coeffs):
+def runOF(caseDir, coeffs, coeffsKeys):
+	for key, value in list(zip(coeffsKeys, coeffs)):
+	    open(caseDir+'default.parameters', 'a').write(key+' '+str(value)+';\n')
 	sp.call("cd "+caseDir+";\
-			sed \"s/alphaK1_pattern/	alphaK1			"+str(coeffs[0])+";/\" constant/turbulencePropertiesPattern > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/alphaK2_pattern/	alphaK2			"+str(coeffs[1])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/alphaOmega1_pattern/	alphaOmega1			"+str(coeffs[2])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/alphaOmega2_pattern/	alphaOmega2			"+str(coeffs[3])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/beta1_pattern/	beta1		"+str(coeffs[4])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/beta2_pattern/	beta2	"+str(coeffs[5])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/betaStar_pattern/	betaStar	"+str(coeffs[6])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/gamma1_pattern/	gamma1	"+str(coeffs[7])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/gamma2_pattern/	gamma2	"+str(coeffs[8])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/a1_pattern/	a1	"+str(coeffs[9])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/b1_pattern/	b1	"+str(coeffs[10])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			sed \"s/c1_pattern/	c1	"+str(coeffs[11])+";/\" constant/turbulenceProperties > tmp;\
-			mv tmp constant/turbulenceProperties;\
-			./Allclean;\
-			sbatch -n8 -W -o log.sbatch Allrun;\
+			sbatch -n8 -W -o log.sbatch runStep.sh;\
 			cd ../", shell=True)
 
-def calcLoss(coeffs, dfRefHV, caseDirs):
+def calcLoss(coeffs, caseDirs, coeffsKeys):
+	open("log.MLTransportCoeffsCorrection", "a").write(str(datetime.now()))
 	with Pool() as pool:
-		pool.map(partial(runOF, coeffs=coeffs), caseDirs)
-	dfTmpHV = list(map(readHVPostProc, list(map(lambda e : e + "postProcessing/singleGraph/0.5/line_U.xy", caseDirs))))
-	MSE = calcMSE(dfRefHV, dfTmpHV)
-	open("log.MLTransportCoeffsCorrection", "a").write("coeffs: "+str(coeffs)+"\n")
-	open("log.MLTransportCoeffsCorrection", "a").write("MSE = "+str(MSE)+"\n")
-	return MSE
+		pool.map(partial(runOF, coeffs=coeffs, coeffsKeys=coeffsKeys), caseDirs)
+	open("log.MLTransportCoeffsCorrection", "a").write("coeffs: "+coeffs+"\n")
+	lossList = list(map(readLoss, list(map(lambda e : e + "data/loss", caseDirs))))
+	loss = sum(lossList)
+	open("log.MLTransportCoeffsCorrection", "a").write("lossList = "+str(lossList)+"\n")
+	open("log.MLTransportCoeffsCorrection", "a").write("loss = "+str(loss)+"\n")
+	return loss
 
-def minimizeSciPy(initCoeffs, bounds, referenceValue, caseDir):
-	res = minimize(calcLoss, initCoeffs, args=(referenceValue, caseDir), method='Nelder-Mead', tol=1e-6)#, bounds=bounds)
+def minimizeSciPy(initCoeffs, bounds, calcLoss, caseDirs):
+	res = minimize(calcLoss, list(initCoeffs.values()), args=(caseDirs, list(initCoeffs.keys())), method='Nelder-Mead', tol=1e-6)#, bounds=bounds)
 	print(res.x)
 
 def main():
 	bounds = [[0.5, 1.0], [0.5, 2.5], [0.2, 0.8], [0.7, 1.0], [0.0, 0.15], [0.0, 0.15], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.5, 1.5], [5.0, 15.0]]
-	coeffs = [0.85, 1.0, 0.5, 0.856, 0.075, 0.0828, 0.09, 0.5555556, 0.44, 0.31, 1.0, 10.0]
-#	coeffs = [0.09]
-	RefFiles = ("constantAngleSlopeTurbKWUProfileInlet180321/data/180321OutletSmoothProfile.csv",
-				"constantAngleSlopeTurbKWUProfileInlet230421/data/230421OutletSmoothProfile.csv",
-				"constantAngleSlopeTurbKWUProfileInlet100621/data/100621OutletSmoothProfile.csv")
-	TurbKWCaseDirs = ("constantAngleSlopeTurbKWUProfileInlet180321/",
+#	coeffs = [0.85, 0.5]
+#	coeffs = [0.85, 1.0, 0.5, 0.856, 0.075, 0.0828, 0.09, 0.5555556, 0.44, 0.31, 1.0, 10.0]
+#	coeffs = [0.88008914, 1.03075748, 0.51309077, 0.86802803, 0.07284852, 0.08184439, 0.08787684, 0.57862255, 0.43953477, 0.28480838, 1.04687694, 10.11244013]
+#	coeffs = [1.27764503, 1.03143375, 0.36743293, 1.09145347, 0.0528126,  0.07580153, 0.05859115, 0.78402053, 0.48373129, 0.30037991, 1.32160641, 7.98319326]
+	coeffs = {}
+#	coeffs.update(alphaK1=0.85)
+#	coeffs.update(alphaK2=1.0)
+#	coeffs.update(alphaOmega1=0.5)
+#	coeffs.update(alphaOmega2=0.856)
+#	coeffs.update(beta1=0.075)
+#	coeffs.update(beta2=0.0828)
+#	coeffs.update(betaStar=0.09)
+#	coeffs.update(gamma1=0.5555556)
+#	coeffs.update(gamma2=0.44)
+#	coeffs.update(a1=0.31)
+#	coeffs.update(b1=1.0)
+#	coeffs.update(c1=10.0)
+	coeffs.update(Ceps2=1.9)
+	coeffs.update(Ck=-0.416)
+	coeffs.update(Bk=8.366)
+	coeffs.update(C=11.0)
+	coeffs.update(value=0.1)
+	caseDirs = ["constantAngleSlopeTurbKWUProfileInlet180321/",
 				"constantAngleSlopeTurbKWUProfileInlet230421/",
-				"constantAngleSlopeTurbKWUProfileInlet100621/")
-	dfHVRef = list(map(readHV, RefFiles))
-	minimizeSciPy(coeffs, bounds, dfHVRef, TurbKWCaseDirs)
+				"constantAngleSlopeTurbKWUProfileInlet100621/"]
+	print(list(coeffs.values()))
+	minimizeSciPy(coeffs, bounds, calcLoss, caseDirs)
 
 if __name__ == "__main__":
 	main()
