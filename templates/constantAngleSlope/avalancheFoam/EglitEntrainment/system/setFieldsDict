@@ -1,0 +1,104 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      setFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+defaultFieldValues
+(
+    volScalarFieldValue alpha.gas       1
+    volScalarFieldValue alpha.liquid    0
+    volScalarFieldValue alpha.entrained 0
+    volScalarFieldValue alpha.soil      0
+	volVectorFieldValue U    (0.0 0.0 0.0)
+);
+
+regions
+(
+    boxToCell
+    {
+        box (0 0 0) (0.1 0.005 0.01);
+        fieldValues
+        (
+    		volScalarFieldValue alpha.gas       0
+    		volScalarFieldValue alpha.liquid    0
+    		volScalarFieldValue alpha.entrained 0
+            volScalarFieldValue alpha.soil      1
+			volVectorFieldValue U    (0.0 0.0 0.0)
+        );
+    }
+    boxToCell
+    {
+        box (0 0 0.01) (0.1 0.005 0.014);
+        fieldValues
+        (
+    		volScalarFieldValue alpha.gas       0
+    		volScalarFieldValue alpha.liquid    1
+    		volScalarFieldValue alpha.entrained 0
+            volScalarFieldValue alpha.soil      0
+			volVectorFieldValue U    (0.0 0.0 0.0)
+        );
+    }
+    /*boxToCell
+    {
+        box (0 0 0.012) (0.1 0.005 0.014);
+        fieldValues
+        (
+    		volScalarFieldValue alpha.gas       0
+    		volScalarFieldValue alpha.liquid    1
+    		volScalarFieldValue alpha.entrained 0
+            volScalarFieldValue alpha.soil      0
+			volVectorFieldValue U    (0.1 0.0 0.0)
+        );
+    }
+    boxToCell
+    {
+        box (0 0 0.014) (0.1 0.005 0.016);
+        fieldValues
+        (
+    		volScalarFieldValue alpha.gas       0
+    		volScalarFieldValue alpha.liquid    1
+    		volScalarFieldValue alpha.entrained 0
+            volScalarFieldValue alpha.soil      0
+			volVectorFieldValue U    (0.2 0.0 0.0)
+        );
+    }
+    boxToCell
+    {
+        box (0 0 0.016) (0.1 0.005 0.018);
+        fieldValues
+        (
+    		volScalarFieldValue alpha.gas       0
+    		volScalarFieldValue alpha.liquid    1
+    		volScalarFieldValue alpha.entrained 0
+            volScalarFieldValue alpha.soil      0
+			volVectorFieldValue U    (0.3 0.0 0.0)
+        );
+    }
+    boxToCell
+    {
+        box (0 0 0.018) (0.1 0.005 0.02);
+        fieldValues
+        (
+    		volScalarFieldValue alpha.gas       0
+    		volScalarFieldValue alpha.liquid    1
+    		volScalarFieldValue alpha.entrained 0
+            volScalarFieldValue alpha.soil      0
+			volVectorFieldValue U    (0.4 0.0 0.0)
+        );
+    }*/
+);
+
+
+// ************************************************************************* //
